@@ -23,6 +23,15 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "low_power.h"
+#include "qspi_handler.h"
+#include "audio_recording.h"
+#include "arm_math.h"
+
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,6 +41,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define ARM_MATH_CM4
+#define ITM_Port32(n) (*((volatile unsigned long *) (0xE0000000+4*n)))
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -57,6 +69,23 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
+// State Machine
+// SETUP: erasing Quad-SPI Flash
+// READY: waits for the user to push the button to start recording
+// RECORDING: records data from the DFSDM, waits for second push or timeout to stop
+// NN: preprocess the audio data and forward into the neural network
+// DAC_TEST: testing audio signal through the dac output
+enum MAIN_STATE {READY, SETUP, RECORDING, NN, DAC_TEST};
+volatile enum MAIN_STATE main_state;
+
+// text buffer
+char txData[80] = "";
+
+// output buffer
+float32_t kws_output[12];
+
+// Flags
+uint8_t LOW_POWER_MODE = 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,12 +144,61 @@ int main(void)
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
+  qspi_init();
+  HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	switch(main_state) {
+	case SETUP:
+		ITM_Port32(31) = 1;
+		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
+
+		// To indicate to user, don't do nothing when red light
+		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
+		qspi_erase_blocks(DFSDM_START_QSPI_ADDRESS, 6);
+
+		ITM_Port32(31) = 2;
+		strcpy(txData, "Press the blue button and say a keyword\r\n");
+	  	HAL_UART_Transmit(&huart1, (uint8_t *)txData, strlen(txData), 10);
+		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
+	  	main_state = READY;
+		break;
+	case RECORDING:
+		ITM_Port32(31) = 3;
+		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
+		record_audio(&hdfsdm1_filter0);
+		ITM_Port32(31) = 4;
+		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
+		main_state = NN;
+		break;
+	case NN:
+		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
+		ITM_Port32(31) = 5;
+		// TODO: preprocessing
+
+		ITM_Port32(31) = 6;
+		// TODO: NN forwarding
+
+		ITM_Port32(31) = 7;
+
+		// TODO: print prediction
+		main_state = SETUP;
+
+		break;
+	case DAC_TEST:
+		convert_from_dfsdm_to_dac_range();
+		play_audio(&hdac1);
+		main_state = NN;
+		break;
+	case READY:
+		if (LOW_POWER_MODE)
+			enter_sleep_mode();
+		break;
+	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -482,6 +560,79 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+// callback function of GPIO interrupts
+void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
+{
+	switch(GPIO_Pin) {
+	case BUTTON_Pin:
+		switch(main_state) {
+		case READY:
+			main_state = RECORDING;
+			break;
+		case RECORDING:
+			dfsdm_stop_flag = 1;
+			break;
+		case SETUP:
+		case DAC_TEST:
+		case NN:
+			break;
+		}
+		break;
+	}
+}
+
+// DAC Circular DMA callback functions
+void HAL_DAC_ConvHalfCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
+	if (hdac->Instance == DAC1) {
+		dac_address_checkpoint += DAC_BUFFER_SIZE / 2;
+
+		if (dac_address_checkpoint >= DAC_START_QSPI_ADDRESS + DAC_AUDIO_SIZE) {
+			HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
+			dac_stop_flag = 1;
+		}
+		else {
+			update_dac_buffer(hdac, dac_buffer_ptr, (DAC_BUFFER_SIZE / 2));
+		}
+	}
+}
+
+void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
+	if (hdac->Instance == DAC1) {
+		dac_address_checkpoint += DAC_BUFFER_SIZE / 2;
+
+		if (dac_address_checkpoint >= DAC_START_QSPI_ADDRESS + DAC_AUDIO_SIZE) {
+			HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
+			dac_stop_flag = 1;
+		}
+		else {
+			update_dac_buffer(hdac, dac_buffer_half_ptr, (DAC_BUFFER_SIZE / 2));
+		}
+	}
+}
+
+// DFSDM Circular DMA Callback Functions
+void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
+	if (hdfsdm_filter == &hdfsdm1_filter0) {
+		update_dfsdm_buffer(hdfsdm_filter, dfsdm_buffer_ptr, DFSDM_BUFFER_HALFSIZE);
+		dfsdm_address_checkpoint += DFSDM_BUFFER_SIZE / 2;
+
+		if (dfsdm_address_checkpoint >= DFSDM_START_QSPI_ADDRESS + DFSDM_AUDIO_SIZE) {
+			dfsdm_stop_flag = 1;
+			HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter);
+		}
+	}
+}
+
+void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
+	if (hdfsdm_filter == &hdfsdm1_filter0) {
+		update_dfsdm_buffer(hdfsdm_filter, dfsdm_buffer_half_ptr, DFSDM_BUFFER_HALFSIZE);
+		dfsdm_address_checkpoint += DFSDM_BUFFER_SIZE / 2;
+		if (dfsdm_address_checkpoint >= DFSDM_START_QSPI_ADDRESS + DFSDM_AUDIO_SIZE) {
+			dfsdm_stop_flag = 1;
+			HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter);
+		}
+	}
+}
 /* USER CODE END 4 */
 
 /**
@@ -512,6 +663,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
+	HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
+	__BKPT();
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
