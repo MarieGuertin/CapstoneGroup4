@@ -146,6 +146,7 @@ int main(void)
 
   qspi_init();
   HAL_TIM_Base_Start_IT(&htim2);
+  main_state = SETUP;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -173,7 +174,8 @@ int main(void)
 		record_audio(&hdfsdm1_filter0);
 		ITM_Port32(31) = 4;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
-		main_state = NN;
+//		main_state = NN;
+		main_state = DAC_TEST;
 		break;
 	case NN:
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
@@ -192,7 +194,9 @@ int main(void)
 	case DAC_TEST:
 		convert_from_dfsdm_to_dac_range();
 		play_audio(&hdac1);
-		main_state = NN;
+//		main_state = NN;
+		main_state = SETUP;
+
 		break;
 	case READY:
 		if (LOW_POWER_MODE)
