@@ -193,6 +193,7 @@ int main(void)
 	case DAC_TEST:
 		convert_from_dfsdm_to_dac_range();
 		play_audio(&hdac1);
+		print_dfsdm_data();
 //		main_state = NN;
 		main_state = SETUP;
 

@@ -10,6 +10,7 @@
 #include "low_power.h"
 #include <stdlib.h>
 #include <stdint.h>
+#include<stdio.h>
 
 int32_t *dfsdm_buffer_ptr;
 int32_t *dfsdm_buffer_half_ptr;
@@ -74,6 +75,36 @@ void record_audio(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	}
 	while(!dfsdm_stop_flag);
 	free(dfsdm_buffer_ptr);
+}
+
+void print_dfsdm_data() {
+	// flash address pointers
+	uint32_t cur_dfsdm_audio_qspi_address = DFSDM_START_QSPI_ADDRESS;
+
+	// buffer
+	int32_t *buffer_arr = (int32_t *) calloc(DFSDM_BUFFER_LENGTH, sizeof(int32_t));
+
+	// navigate through all DFSDM audio memory on flash
+	while (cur_dfsdm_audio_qspi_address < DFSDM_START_QSPI_ADDRESS + DFSDM_AUDIO_SIZE) {
+		uint32_t remaining_size = DFSDM_START_QSPI_ADDRESS + DFSDM_AUDIO_SIZE - cur_dfsdm_audio_qspi_address;
+		uint32_t size = remaining_size < DFSDM_BUFFER_SIZE ? remaining_size : DFSDM_BUFFER_SIZE;
+
+		// read from flash
+		qspi_read((uint8_t*)buffer_arr, cur_dfsdm_audio_qspi_address, size);
+
+		// print to terminal
+		for (uint32_t i = 0; i < DFSDM_BUFFER_LENGTH; i++) {
+			char dfsdm_value_str[10];
+			sprintf(dfsdm_value_str, "%d", (buffer_arr[i] >> 8));
+			print(dfsdm_value_str);
+			print(",");
+		}
+
+		cur_dfsdm_audio_qspi_address += size;
+	}
+	print("\r\n");
+	// free up memory
+	free(buffer_arr);
 }
 
 void convert_from_dfsdm_to_dac_range() {
