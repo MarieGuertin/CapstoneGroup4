@@ -79,7 +79,7 @@ enum MAIN_STATE {READY, SETUP, RECORDING, NN, DAC_TEST};
 volatile enum MAIN_STATE main_state;
 
 // text buffer
-char txData[80] = "";
+char uart_buffer[100] = "";
 
 // output buffer
 float32_t kws_output[12];
@@ -163,8 +163,7 @@ int main(void)
 		qspi_erase_blocks(DFSDM_START_QSPI_ADDRESS, 6);
 
 		ITM_Port32(31) = 2;
-		strcpy(txData, "Press the blue button and say a keyword\r\n");
-	  	HAL_UART_Transmit(&huart1, (uint8_t *)txData, strlen(txData), 10);
+		print("Press the blue button and say a keyword\r\n");
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 	  	main_state = READY;
 		break;
@@ -636,6 +635,11 @@ void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filt
 			HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter);
 		}
 	}
+}
+
+void print(const char* txt) {
+	strcpy(uart_buffer, txt);
+  	HAL_UART_Transmit(&huart1, (uint8_t *)uart_buffer, strlen(txt), 10);
 }
 /* USER CODE END 4 */
 
