@@ -155,6 +155,7 @@ int main(void)
   {
 	switch(main_state) {
 	case SETUP:
+	{
 		ITM_Port32(31) = 1;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
 
@@ -167,7 +168,9 @@ int main(void)
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
 	  	main_state = READY;
 		break;
+	}
 	case RECORDING:
+	{
 		ITM_Port32(31) = 3;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
 		record_audio(&hdfsdm1_filter0);
@@ -176,7 +179,11 @@ int main(void)
 //		main_state = NN;
 		main_state = DAC_TEST;
 		break;
+	}
 	case NN:
+	{
+		// 1 . Preprocessing
+
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
 		ITM_Port32(31) = 5;
 		// TODO: preprocessing
@@ -190,7 +197,9 @@ int main(void)
 		main_state = SETUP;
 
 		break;
+	}
 	case DAC_TEST:
+	{
 		convert_from_dfsdm_to_dac_range();
 		play_audio(&hdac1);
 		print_dfsdm_data();
@@ -198,10 +207,13 @@ int main(void)
 		main_state = SETUP;
 
 		break;
+	}
 	case READY:
+	{
 		if (LOW_POWER_MODE)
 			enter_sleep_mode();
 		break;
+	}
 	}
     /* USER CODE END WHILE */
 

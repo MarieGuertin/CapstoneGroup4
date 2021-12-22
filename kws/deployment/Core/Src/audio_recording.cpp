@@ -95,7 +95,7 @@ void print_dfsdm_data() {
 		// print to terminal
 		for (uint32_t i = 0; i < DFSDM_BUFFER_LENGTH; i++) {
 			char dfsdm_value_str[10];
-			sprintf(dfsdm_value_str, "%d", (buffer_arr[i] >> 16));
+			sprintf(dfsdm_value_str, "%d", (int)(buffer_arr[i] >> 16));
 			print(dfsdm_value_str);
 			print(",");
 		}
