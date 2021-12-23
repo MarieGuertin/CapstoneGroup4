@@ -27,6 +27,7 @@
 #include "qspi_handler.h"
 #include "audio_recording.h"
 #include "arm_math.h"
+#include "preprocessing.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -75,7 +76,7 @@ UART_HandleTypeDef huart1;
 // RECORDING: records data from the DFSDM, waits for second push or timeout to stop
 // NN: preprocess the audio data and forward into the neural network
 // DAC_TEST: testing audio signal through the dac output
-enum MAIN_STATE {READY, SETUP, RECORDING, NN, DAC_TEST};
+enum MAIN_STATE {READY, SETUP, RECORDING, NN, AUDIO_TEST, MFCC_TEST};
 volatile enum MAIN_STATE main_state;
 
 // text buffer
@@ -146,7 +147,7 @@ int main(void)
 
   qspi_init();
   HAL_TIM_Base_Start_IT(&htim2);
-  main_state = SETUP;
+  main_state = MFCC_TEST;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -177,7 +178,7 @@ int main(void)
 		ITM_Port32(31) = 4;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
 //		main_state = NN;
-		main_state = DAC_TEST;
+		main_state = AUDIO_TEST;
 		break;
 	}
 	case NN:
@@ -198,7 +199,7 @@ int main(void)
 
 		break;
 	}
-	case DAC_TEST:
+	case AUDIO_TEST:
 	{
 		convert_from_dfsdm_to_dac_range();
 		play_audio(&hdac1);
@@ -212,6 +213,26 @@ int main(void)
 	{
 		if (LOW_POWER_MODE)
 			enter_sleep_mode();
+		break;
+	}
+	case MFCC_TEST:
+	{
+		// 1. MFCC Test
+		int32_t mfcc_in[16000] = MFCC_IN_TEST;
+		qspi_write((uint8_t*)mfcc_in, DFSDM_START_QSPI_ADDRESS, 16000*sizeof(int32_t));
+
+		q7_t *mfcc_out = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
+
+		compute_mfcc_coefficients(mfcc_out, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
+
+		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
+			char mfcc_coeff_str[10];
+			sprintf(mfcc_coeff_str, "%d", (int)(mfcc_out[i]));
+			print(mfcc_coeff_str);
+			print(",");
+		}
+		free(mfcc_out);
+		main_state = SETUP;
 		break;
 	}
 	}
@@ -589,7 +610,8 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 			dfsdm_stop_flag = 1;
 			break;
 		case SETUP:
-		case DAC_TEST:
+		case MFCC_TEST:
+		case AUDIO_TEST:
 		case NN:
 			break;
 		}
