@@ -193,6 +193,18 @@ int main(void)
 
 		compute_mfcc_coefficients(nn_input, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, FRAME_LEN, FRAME_SHIFT, NUM_MFCC_COEFFS, MFCC_DEC_BITS);
 
+		print("\nMFCC:\r\n");
+		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
+			char mfcc_coeff_str[10];
+			sprintf(mfcc_coeff_str, "%d", (int8_t)(nn_input[i]));
+			print(mfcc_coeff_str);
+			if ((i+1) % NUM_MFCC_COEFFS == 0)
+				print("\r\n");
+			else
+				print(",");
+		}
+		print("\r\n");
+
 //		// 2. Forward
 		DS_CNN *ds_cnn = new DS_CNN();
 		ds_cnn->run_nn(nn_input, nn_output);
@@ -223,26 +235,6 @@ int main(void)
 			enter_sleep_mode();
 		break;
 	}
-//	case MFCC_TEST:
-//	{
-//		// 1. MFCC Test
-//		int32_t mfcc_in[16000] = MFCC_IN_TEST;
-//		qspi_write((uint8_t*)mfcc_in, DFSDM_START_QSPI_ADDRESS, 16000*sizeof(int32_t));
-//
-//		q7_t *mfcc_out = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
-//
-//		compute_mfcc_coefficients(mfcc_out, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
-//
-//		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
-//			char mfcc_coeff_str[10];
-//			sprintf(mfcc_coeff_str, "%d", (int8_t)(mfcc_out[i]));
-//			print(mfcc_coeff_str);
-//			print(",");
-//		}
-//		free(mfcc_out);
-//		main_state = SETUP;
-//		break;
-//	}
 	}
     /* USER CODE END WHILE */
 
