@@ -186,25 +186,32 @@ int main(void)
 	{
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
 		// 1 . Preprocessing
-		q7_t *nn_input = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
+		q7_t *mfcc_output = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
 
 		// output buffer
-		q7_t nn_output[12];
+		q7_t *predictions = (q7_t*) calloc(NUM_OUTPUT_CLASSES, sizeof(q7_t));
 
-		compute_mfcc_coefficients(nn_input, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, FRAME_LEN, FRAME_SHIFT, NUM_MFCC_COEFFS, MFCC_DEC_BITS);
+		// input buffer
+		q7_t *nn_input = (q7_t*) calloc(NUM_FRAMES*NUM_MFCC_COEFFS, sizeof(q7_t));
 
-		print("\nMFCC:\r\n");
-		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
-			char mfcc_coeff_str[10];
-			sprintf(mfcc_coeff_str, "%d", (int8_t)(nn_input[i]));
-			print(mfcc_coeff_str);
-			if ((i+1) % NUM_MFCC_COEFFS == 0)
-				print("\r\n");
-			else
-				print(",");
+		compute_mfcc_coefficients(mfcc_output, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, FRAME_LEN, FRAME_SHIFT, NUM_MFCC_COEFFS, MFCC_DEC_BITS);
+
+//		print("\nMFCC:\r\n");
+//		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
+//			char mfcc_coeff_str[10];
+//			sprintf(mfcc_coeff_str, "%d", (int8_t)(mfcc_output[i]));
+//			print(mfcc_coeff_str);
+//			if ((i+1) % NUM_MFCC_COEFFS == 0)
+//				print("\r\n");
+//			else
+//				print(",");
+//		}
+//		print("\r\n");
+
+		// TODO: sliding window predictions
+		for (uint32_t i = 0; i < NUM_PREDICTIONS; i ++) {
+
 		}
-		print("\r\n");
-
 //		// 2. Forward
 		DS_CNN *ds_cnn = new DS_CNN();
 		ds_cnn->run_nn(nn_input, nn_output);
@@ -215,8 +222,11 @@ int main(void)
 //		// 3. Print predictions
 		sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
 		print(uart_buffer);
-		free(nn_input);
+
 		main_state = SETUP;
+		free(nn_input);
+		free(mfcc_output);
+		free(predictions);
 		break;
 	}
 	case AUDIO_TEST:

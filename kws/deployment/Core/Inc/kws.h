@@ -19,8 +19,10 @@
 #define MFCC_BUFFER_SIZE (NUM_FRAMES*NUM_MFCC_COEFFS)
 #define FRAME_LEN_MS 40
 #define FRAME_LEN ((int16_t)(SAMP_FREQ * 0.001 * FRAME_LEN_MS))
-
-extern uint32_t num_output_classes;
+#define RECORDING_WINDOW_SIZE ((uint32_t)NUM_FRAMES)
+#define SLIDING_WINDOW_SIZE ((uint32_t) 5)
+#define NUM_PREDICTIONS ((uint32_t) NUM_FRAMES - (SLIDING_WINDOW_SIZE-1))
+#define NUM_OUTPUT_CLASSES ((uint32_t) 12)
 
 void compute_mfcc_coefficients(q7_t *mfcc_out, uint32_t audio_start_address, uint32_t num_frames, uint32_t frame_len, uint32_t frame_shift, uint32_t mfcc_num_features, uint32_t mfcc_num_dec_bits);
 uint32_t get_top_class(q7_t* nn_output);
