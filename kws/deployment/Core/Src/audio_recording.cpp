@@ -35,6 +35,7 @@ void update_dfsdm_buffer(DFSDM_Filter_HandleTypeDef *hdfsdm_filter, int32_t *dfs
 
 	// write half of buffer
 	qspi_write((uint8_t*)dfsdm_buffer_ptr, dfsdm_address_checkpoint, write_size);
+	dfsdm_address_checkpoint += write_size;
 }
 
 void update_dac_buffer(DAC_HandleTypeDef *hdac, uint32_t *dac_buffer_ptr, uint32_t size) {
@@ -43,6 +44,7 @@ void update_dac_buffer(DAC_HandleTypeDef *hdac, uint32_t *dac_buffer_ptr, uint32
 
 	// read from flash
 	qspi_read((uint8_t*) dac_buffer_ptr, dac_address_checkpoint, read_size);
+	dac_address_checkpoint += read_size;
 }
 
 // play collected audio samples on DAC
@@ -57,7 +59,9 @@ void play_audio(DAC_HandleTypeDef *hdac) {
 
 	// Start DAC in circular mode
 	dac_stop_flag = 0;
-	HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, dac_buffer_ptr, DAC_BUFFER_LENGTH, DAC_ALIGN_12B_R);
+	if (HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, dac_buffer_ptr, DAC_BUFFER_LENGTH, DAC_ALIGN_12B_R) == HAL_ERROR) {
+		Error_Handler();
+	}
 	while(!dac_stop_flag);
 	free(dac_buffer_ptr);
 }
@@ -68,7 +72,9 @@ void record_audio(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	dfsdm_buffer_half_ptr = dfsdm_buffer_ptr + (DFSDM_BUFFER_LENGTH/2);
 
 	dfsdm_stop_flag = 0;
-	HAL_DFSDM_FilterRegularStart_DMA(hdfsdm_filter, dfsdm_buffer_ptr,DFSDM_BUFFER_LENGTH);
+	if (HAL_DFSDM_FilterRegularStart_DMA(hdfsdm_filter, dfsdm_buffer_ptr,DFSDM_BUFFER_LENGTH) == HAL_ERROR) {
+		Error_Handler();
+	}
 	if(LOW_POWER_MODE){
 		enter_sleep_mode();
 		HAL_ResumeTick();

@@ -26,8 +26,9 @@
 #include "low_power.h"
 #include "qspi_handler.h"
 #include "audio_recording.h"
-#include "preprocessing.h"
 #include "arm_math.h"
+#include "ML-KWS-for-MCU/NN/DS_CNN/ds_cnn.h"
+#include "kws.h"
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -80,9 +81,6 @@ volatile enum MAIN_STATE main_state;
 
 // text buffer
 char uart_buffer[100] = "";
-
-// output buffer
-float32_t kws_output[12];
 
 // Flags
 uint8_t LOW_POWER_MODE = 1;
@@ -147,6 +145,10 @@ int main(void)
   qspi_init();
   HAL_TIM_Base_Start_IT(&htim2);
   main_state = SETUP;
+
+  char output_class[12][8] = {"Silence", "Unknown","yes","no","up","down","left","right","on","off","stop","go"};
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -184,30 +186,33 @@ int main(void)
 	{
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
 		// 1 . Preprocessing
-		q7_t *mfcc_out = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
+		q7_t *nn_input = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
 
-		compute_mfcc_coefficients(mfcc_out, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
+		// output buffer
+		q7_t nn_output[12];
 
-//		// 2. Create Model
-//		DS_CNN ds_cnn = new DS_CNN();
-//		ds_cnn.run_nn(mfcc_out, out_data)
-		// 3. Forward MFCC matrix
+		compute_mfcc_coefficients(nn_input, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, FRAME_LEN, FRAME_SHIFT, NUM_MFCC_COEFFS, MFCC_DEC_BITS);
 
-		// TODO: NN forwarding
-
-		// 4. Print predictions
-		// TODO: print prediction
+//		// 2. Forward
+//		DS_CNN *ds_cnn = new DS_CNN();
+//		ds_cnn->run_nn(nn_input, nn_output);
+//		arm_softmax_q7(nn_output,num_output_classes,nn_output);
+//		uint32_t pred_index = get_top_class(nn_output);
+//		ds_cnn->~DS_CNN();
+//		// 4. Print predictions
+//		sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
+//		print(uart_buffer);
+		free(nn_input);
 		main_state = SETUP;
-
 		break;
 	}
 	case AUDIO_TEST:
 	{
 		convert_from_dfsdm_to_dac_range();
 		play_audio(&hdac1);
-		print_dfsdm_data();
-//		main_state = NN;
-		main_state = SETUP;
+//		print_dfsdm_data();
+		main_state = NN;
+//		main_state = SETUP;
 
 		break;
 	}
@@ -624,10 +629,10 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 // DAC Circular DMA callback functions
 void HAL_DAC_ConvHalfCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 	if (hdac->Instance == DAC1) {
-		dac_address_checkpoint += DAC_BUFFER_SIZE / 2;
-
 		if (dac_address_checkpoint >= DAC_START_QSPI_ADDRESS + DAC_AUDIO_SIZE) {
-			HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
+			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
+				Error_Handler();
+			}
 			dac_stop_flag = 1;
 		}
 		else {
@@ -638,10 +643,10 @@ void HAL_DAC_ConvHalfCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 
 void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 	if (hdac->Instance == DAC1) {
-		dac_address_checkpoint += DAC_BUFFER_SIZE / 2;
-
 		if (dac_address_checkpoint >= DAC_START_QSPI_ADDRESS + DAC_AUDIO_SIZE) {
-			HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
+			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
+				Error_Handler();
+			}
 			dac_stop_flag = 1;
 		}
 		else {
@@ -654,11 +659,12 @@ void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	if (hdfsdm_filter == &hdfsdm1_filter0) {
 		update_dfsdm_buffer(hdfsdm_filter, dfsdm_buffer_ptr, DFSDM_BUFFER_HALFSIZE);
-		dfsdm_address_checkpoint += DFSDM_BUFFER_SIZE / 2;
 
 		if (dfsdm_address_checkpoint >= DFSDM_START_QSPI_ADDRESS + DFSDM_AUDIO_SIZE) {
 			dfsdm_stop_flag = 1;
-			HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter);
+			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
+				Error_Handler();
+			}
 		}
 	}
 }
@@ -666,10 +672,11 @@ void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm
 void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	if (hdfsdm_filter == &hdfsdm1_filter0) {
 		update_dfsdm_buffer(hdfsdm_filter, dfsdm_buffer_half_ptr, DFSDM_BUFFER_HALFSIZE);
-		dfsdm_address_checkpoint += DFSDM_BUFFER_SIZE / 2;
 		if (dfsdm_address_checkpoint >= DFSDM_START_QSPI_ADDRESS + DFSDM_AUDIO_SIZE) {
 			dfsdm_stop_flag = 1;
-			HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter);
+			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
+				Error_Handler();
+			}
 		}
 	}
 }

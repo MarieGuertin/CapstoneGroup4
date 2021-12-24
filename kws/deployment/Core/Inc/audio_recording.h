@@ -8,22 +8,22 @@
 #define INC_AUDIO_RECORDING_H_
 
 // DFSDM
-#define DFSDM_BUFFER_LENGTH ((uint32_t)16000)
-#define DFSDM_BUFFER_SIZE ((uint32_t) 16000 * 4)
-#define DFSDM_BUFFER_HALFSIZE ((uint32_t)32000)
+#define DFSDM_BUFFER_LENGTH ((uint32_t)8000)
+#define DFSDM_BUFFER_SIZE ((uint32_t) DFSDM_BUFFER_LENGTH * 4)
+#define DFSDM_BUFFER_HALFSIZE ((uint32_t)DFSDM_BUFFER_SIZE/2)
 #define DFSDM_SAMPLING_RATE ((uint32_t)16000)
-#define DFSDM_AUDIO_SIZE ((uint32_t)16000*4*1) // sampling rate * size of one sample (bytes) * number of seconds
+#define DFSDM_AUDIO_SIZE ((uint32_t)DFSDM_SAMPLING_RATE*4*1) // sampling rate * size of one sample (bytes) * number of seconds
 #define DFSDM_MIN ((float)-8388608)
 #define DFSDM_MAX ((float)8388608)
 #define DFSDM_START_QSPI_ADDRESS (0xA0000)
 
 // DAC
-#define DAC_BUFFER_LENGTH ((uint32_t)16000)
-#define DAC_BUFFER_SIZE ((uint32_t )16000 * 4)
+#define DAC_BUFFER_LENGTH ((uint32_t)8000)
+#define DAC_BUFFER_SIZE ((uint32_t )DAC_BUFFER_LENGTH * 4)
 #define DAC_MAX ((uint32_t)4095)
 #define DAC_MIN = ((uint32_t)0)
-#define DAC_START_QSPI_ADDRESS (0xAFA00)
-#define DAC_AUDIO_SIZE ((uint32_t)16000*4*1)
+#define DAC_START_QSPI_ADDRESS (DFSDM_START_QSPI_ADDRESS+DFSDM_AUDIO_SIZE)
+#define DAC_AUDIO_SIZE ((uint32_t)DFSDM_AUDIO_SIZE)
 
 // DFSDM --> DAC
 #define DFSDM_TO_DAC_SCALE_FACTOR ((float)0.001)
