@@ -8,6 +8,8 @@
 #ifndef INC_PREPROCESSING_H_
 #define INC_PREPROCESSING_H_
 
+#include "arm_nnfunctions.h"
+
 #define SAMP_FREQ 16000
 #define MFCC_DEC_BITS 1
 #define FRAME_SHIFT_MS 20

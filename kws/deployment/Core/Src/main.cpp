@@ -26,9 +26,8 @@
 #include "low_power.h"
 #include "qspi_handler.h"
 #include "audio_recording.h"
-#include "arm_math.h"
 #include "preprocessing.h"
-
+#include "arm_math.h"
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -147,7 +146,7 @@ int main(void)
 
   qspi_init();
   HAL_TIM_Base_Start_IT(&htim2);
-  main_state = MFCC_TEST;
+  main_state = SETUP;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -183,17 +182,20 @@ int main(void)
 	}
 	case NN:
 	{
-		// 1 . Preprocessing
-
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
-		ITM_Port32(31) = 5;
-		// TODO: preprocessing
+		// 1 . Preprocessing
+		q7_t *mfcc_out = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
 
-		ITM_Port32(31) = 6;
+		compute_mfcc_coefficients(mfcc_out, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
+
+//		// 2. Create Model
+//		DS_CNN ds_cnn = new DS_CNN();
+//		ds_cnn.run_nn(mfcc_out, out_data)
+		// 3. Forward MFCC matrix
+
 		// TODO: NN forwarding
 
-		ITM_Port32(31) = 7;
-
+		// 4. Print predictions
 		// TODO: print prediction
 		main_state = SETUP;
 
@@ -215,26 +217,26 @@ int main(void)
 			enter_sleep_mode();
 		break;
 	}
-	case MFCC_TEST:
-	{
-		// 1. MFCC Test
-		int32_t mfcc_in[16000] = MFCC_IN_TEST;
-		qspi_write((uint8_t*)mfcc_in, DFSDM_START_QSPI_ADDRESS, 16000*sizeof(int32_t));
-
-		q7_t *mfcc_out = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
-
-		compute_mfcc_coefficients(mfcc_out, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
-
-		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
-			char mfcc_coeff_str[10];
-			sprintf(mfcc_coeff_str, "%d", (int)(mfcc_out[i]));
-			print(mfcc_coeff_str);
-			print(",");
-		}
-		free(mfcc_out);
-		main_state = SETUP;
-		break;
-	}
+//	case MFCC_TEST:
+//	{
+//		// 1. MFCC Test
+//		int32_t mfcc_in[16000] = MFCC_IN_TEST;
+//		qspi_write((uint8_t*)mfcc_in, DFSDM_START_QSPI_ADDRESS, 16000*sizeof(int32_t));
+//
+//		q7_t *mfcc_out = (q7_t*) calloc(MFCC_BUFFER_SIZE, sizeof(q7_t));
+//
+//		compute_mfcc_coefficients(mfcc_out, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
+//
+//		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
+//			char mfcc_coeff_str[10];
+//			sprintf(mfcc_coeff_str, "%d", (int8_t)(mfcc_out[i]));
+//			print(mfcc_coeff_str);
+//			print(",");
+//		}
+//		free(mfcc_out);
+//		main_state = SETUP;
+//		break;
+//	}
 	}
     /* USER CODE END WHILE */
 

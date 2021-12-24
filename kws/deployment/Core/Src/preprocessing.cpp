@@ -6,7 +6,7 @@
  */
 
 #include "main.h"
-#include "ML-KWS-for-MCU/mfcc.h"
+#include "ML-KWS-for-MCU/MFCC/mfcc.h"
 #include "qspi_handler.h"
 #include "audio_recording.h"
 
@@ -21,8 +21,8 @@ void compute_mfcc_coefficients(q7_t *mfcc_out, uint32_t audio_start_address, uin
 	for (uint32_t i=0; i < num_frames; i ++) {
 		qspi_read((uint8_t*)audio_buffer_int32, cur_qspi_address, frame_len * sizeof(int32_t));
 		for (uint32_t j=0; j < frame_len; j++) {
-			mfcc_in[j] = (int16_t)(audio_buffer_int32[j] >> 8);
-//			mfcc_in[j] = (int16_t)(audio_buffer_int32[j]);
+//			mfcc_in[j] = (int16_t)(audio_buffer_int32[j] >> 8);
+			mfcc_in[j] = (int16_t)(audio_buffer_int32[j]);
 
 		}
 		mfcc->mfcc_compute(mfcc_in, mfcc_out + i * mfcc_num_features);
