@@ -194,14 +194,15 @@ int main(void)
 		compute_mfcc_coefficients(nn_input, DFSDM_START_QSPI_ADDRESS, NUM_FRAMES, FRAME_LEN, FRAME_SHIFT, NUM_MFCC_COEFFS, MFCC_DEC_BITS);
 
 //		// 2. Forward
-//		DS_CNN *ds_cnn = new DS_CNN();
-//		ds_cnn->run_nn(nn_input, nn_output);
-//		arm_softmax_q7(nn_output,num_output_classes,nn_output);
-//		uint32_t pred_index = get_top_class(nn_output);
-//		ds_cnn->~DS_CNN();
-//		// 4. Print predictions
-//		sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
-//		print(uart_buffer);
+		DS_CNN *ds_cnn = new DS_CNN();
+		ds_cnn->run_nn(nn_input, nn_output);
+		arm_softmax_q7(nn_output,num_output_classes,nn_output);
+		uint32_t pred_index = get_top_class(nn_output);
+		ds_cnn->~DS_CNN();
+
+//		// 3. Print predictions
+		sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
+		print(uart_buffer);
 		free(nn_input);
 		main_state = SETUP;
 		break;
