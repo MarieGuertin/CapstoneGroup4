@@ -25,8 +25,8 @@
 
 #include "low_power.h"
 #include "qspi_handler.h"
-#include "audio_recording.h"
 #include "audio_recorder.h"
+#include "audio_player.h"
 #include "arm_math.h"
 #include "ML-KWS-for-MCU/NN/DS_CNN/ds_cnn.h"
 #include "kws.h"
@@ -84,6 +84,10 @@ volatile enum MAIN_STATE main_state;
 char uart_buffer[100] = "";
 
 AudioRecorder *audio_recorder;
+DFSDMData *dfsdm_data;
+
+AudioPlayer *audio_player;
+DACData *dac_data;
 
 // Flags
 uint8_t LOW_POWER_MODE = 1;
@@ -179,11 +183,12 @@ int main(void)
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
 
 		audio_recorder = new AudioRecorder(&hdfsdm1_filter0);
-		audio_recorder->record_audio(DFSDM_AUDIO_QSPI_ADDRESS);
+		dfsdm_data = audio_recorder->record_audio(DFSDM_AUDIO_QSPI_ADDRESS);
 
 		ITM_Port32(31) = 4;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
 //		main_state = NN;
+		audio_recorder->~AudioRecorder();
 		main_state = AUDIO_TEST;
 		break;
 	}
@@ -255,11 +260,14 @@ int main(void)
 	}
 	case AUDIO_TEST:
 	{
-		convert_from_dfsdm_to_dac_range(DFSDM_AUDIO_QSPI_ADDRESS, DAC_AUDIO_QSPI_ADDRESS, AUDIO_LENGTH);
-		play_audio(&hdac1);
+		audio_player = new AudioPlayer(&hdac1);
+		dac_data = audio_player->create_dac_data(dfsdm_data);
+		audio_player->play_audio(dac_data);
+
 //		audio_recorder->print_data();
 //		main_state = NN;
 		main_state = SETUP;
+		audio_player->~AudioPlayer();
 
 		break;
 	}
@@ -657,28 +665,28 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 // DAC Circular DMA callback functions
 void HAL_DAC_ConvHalfCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 	if (hdac->Instance == DAC1) {
-		if (played_size >= DAC_AUDIO_SIZE) {
+		if (audio_player->cur_data->played_samples >= MAX_RECORD_LENGTH) {
 			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
 				Error_Handler();
 			}
-			dac_stop_flag = 1;
+			audio_player->dac_stop_flag = 1;
 		}
 		else {
-			update_dac_buffer(hdac, dac_buffer_ptr, (DAC_BUFFER_LENGTH * DAC_DATA_WIDTH / 2));
+			audio_player->update_dac_buffer(0, (PLAY_HALF_BUFFER_LENGTH * DAC_DATA_WIDTH));
 		}
 	}
 }
 
 void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 	if (hdac->Instance == DAC1) {
-		if (played_size >= DAC_AUDIO_SIZE) {
+		if (audio_player->cur_data->played_samples >= MAX_RECORD_LENGTH) {
 			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
 				Error_Handler();
 			}
-			dac_stop_flag = 1;
+			audio_player->dac_stop_flag = 1;
 		}
 		else {
-			update_dac_buffer(hdac, dac_buffer_half_ptr, (DAC_BUFFER_LENGTH * DAC_DATA_WIDTH / 2));
+			audio_player->update_dac_buffer(PLAY_HALF_BUFFER_LENGTH, (PLAY_HALF_BUFFER_LENGTH * DAC_DATA_WIDTH));
 		}
 	}
 }
@@ -686,8 +694,8 @@ void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 // DFSDM Circular DMA Callback Functions
 void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	if (hdfsdm_filter == &hdfsdm1_filter0) {
-		audio_recorder->update_dfsdm_buffer(0, (HALF_BUFFER_LENGTH * DFSDM_DATA_WIDTH));
-		if (audio_recorder->record->num_of_samples >= MAX_RECORD_LENGTH) {
+		audio_recorder->update_dfsdm_buffer(0, (RECORD_HALF_BUFFER_LENGTH * DFSDM_DATA_WIDTH));
+		if (audio_recorder->cur_data->num_of_samples >= MAX_RECORD_LENGTH) {
 			audio_recorder->dfsdm_stop_flag = 1;
 			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
 				Error_Handler();
@@ -698,8 +706,8 @@ void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm
 
 void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	if (hdfsdm_filter == &hdfsdm1_filter0) {
-		audio_recorder->update_dfsdm_buffer(HALF_BUFFER_LENGTH, (HALF_BUFFER_LENGTH * DFSDM_DATA_WIDTH));
-		if (audio_recorder->record->num_of_samples >= MAX_RECORD_LENGTH) {
+		audio_recorder->update_dfsdm_buffer(RECORD_HALF_BUFFER_LENGTH, (RECORD_HALF_BUFFER_LENGTH * DFSDM_DATA_WIDTH));
+		if (audio_recorder->cur_data->num_of_samples >= MAX_RECORD_LENGTH) {
 			audio_recorder->dfsdm_stop_flag = 1;
 			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
 				Error_Handler();

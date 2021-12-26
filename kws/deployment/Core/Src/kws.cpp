@@ -9,7 +9,6 @@
 #include "main.h"
 #include "ML-KWS-for-MCU/MFCC/mfcc.h"
 #include "qspi_handler.h"
-#include "audio_recording.h"
 
 uint32_t num_output_classes = 12;
 
