@@ -32,8 +32,8 @@ void AudioPlayer::play_audio(WaveData * data) {
 	played_samples = 0;
 	converted_samples = 0;
 
-	conversion_buffer = (uint32_t *) calloc(PLAY_BUFFER_LENGTH, DAC_DATA_WIDTH);
-	dac_buffer = (uint32_t *) calloc(PLAY_BUFFER_LENGTH, DAC_DATA_WIDTH);
+	conversion_buffer = (uint16_t *) calloc(PLAY_BUFFER_LENGTH, WAVE_DATA_WIDTH);
+	dac_buffer = (uint16_t *) calloc(PLAY_BUFFER_LENGTH, DAC_DATA_WIDTH);
 
 
 	// initial full read
@@ -41,7 +41,7 @@ void AudioPlayer::play_audio(WaveData * data) {
 
 	// Start DAC in circular mode
 	dac_stop_flag = 0;
-	if (HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, dac_buffer, PLAY_BUFFER_LENGTH, DAC_ALIGN_12B_R) == HAL_ERROR) {
+	if (HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, (uint32_t*)dac_buffer, PLAY_BUFFER_LENGTH, DAC_ALIGN_12B_R) == HAL_ERROR) {
 		Error_Handler();
 	}
 	while(!dac_stop_flag);
@@ -57,9 +57,9 @@ void AudioPlayer::update_dac_buffer(uint32_t offset, uint32_t data_length) {
 		read_length = remaining_samples;
 	}
 	if (read_length > 0) {
-		qspi_read((uint8_t*)conversion_buffer, cur_data->qspi_address + converted_samples*DFSDM_DATA_WIDTH, read_length * DFSDM_DATA_WIDTH);
-		for (uint32_t i = 0; i < read_length; i++) {
-			conversion_buffer[i] = (uint32_t)(((int32_t)conversion_buffer[i] >> 8) * DFSDM_TO_DAC_SCALE_FACTOR + DFSDM_TO_DAC_BIAS);
+		qspi_read((uint8_t*)conversion_buffer, cur_data->qspi_address + converted_samples*WAVE_DATA_WIDTH, read_length * WAVE_DATA_WIDTH);
+		for (uint32_t i = 0; i < read_length; i++){
+			conversion_buffer[i] = (uint16_t)(conversion_buffer[i] * WAVE_TO_DAC_SCALE_FACTOR + WAVE_TO_DAC_BIAS);
 		}
 		converted_samples += read_length;
 		memcpy(dac_buffer + offset, conversion_buffer, read_length * DAC_DATA_WIDTH);

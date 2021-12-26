@@ -37,6 +37,8 @@ WaveData * AudioRecorder::record_audio(uint32_t qspi_address) {
 
 	// start DFSDM
 	dfsdm_buffer = (int32_t*) calloc(RECORD_BUFFER_LENGTH, DFSDM_DATA_WIDTH);
+	wave_buffer = (int16_t*) calloc(RECORD_BUFFER_LENGTH, WAVE_DATA_WIDTH);
+
 	dfsdm_stop_flag = 0;
 	if (HAL_DFSDM_FilterRegularStart_DMA(hdfsdm_filter, dfsdm_buffer,RECORD_BUFFER_LENGTH) == HAL_ERROR) {
 		Error_Handler();
@@ -48,21 +50,24 @@ WaveData * AudioRecorder::record_audio(uint32_t qspi_address) {
 	}
 	while(!dfsdm_stop_flag);
 	delete [] dfsdm_buffer;
+	delete [] wave_buffer;
 	return cur_data;
 }
 
 // update buffer. Method called by dfsdm callbacks functions.
-void AudioRecorder::update_dfsdm_buffer(uint32_t offset, uint32_t size) {
+void AudioRecorder::update_wave_buffer(uint32_t offset, uint32_t data_length) {
 	uint32_t remaining_samples = MAX_RECORD_LENGTH - cur_data->num_of_samples;
-	uint32_t remaining_size = remaining_samples * DFSDM_DATA_WIDTH;
-	uint32_t write_size = size;
-	if (write_size >= remaining_size) {
-		write_size = remaining_size;
+	uint32_t write_length = data_length;
+	if (write_length >= remaining_samples) {
+		write_length = remaining_samples;
 	}
-
+	// keep 24 MSB and cast to int16_t
+	for (uint32_t i = 0;i < write_length; i++) {
+		wave_buffer[i] = (int16_t)((dfsdm_buffer + offset)[i] >> 16);
+	}
 	// write half of buffer
-	qspi_write((uint8_t*)(dfsdm_buffer + offset), cur_data->qspi_address + (cur_data->num_of_samples * DFSDM_DATA_WIDTH), write_size);
-	cur_data->num_of_samples += (write_size / DFSDM_DATA_WIDTH);
+	qspi_write((uint8_t*)(wave_buffer), cur_data->qspi_address + (cur_data->num_of_samples * WAVE_DATA_WIDTH), write_length * WAVE_DATA_WIDTH);
+	cur_data->num_of_samples += write_length;
 }
 
 // print recorded data in 16-bit signed format
@@ -71,7 +76,7 @@ void AudioRecorder::print_data(WaveData * data) {
 	uint32_t printed_samples = 0;
 
 	// buffer
-	int32_t *buffer = (int32_t *) calloc(PRINT_BUFFER_LENGTH, DFSDM_DATA_WIDTH);
+	int16_t *buffer = (int16_t *) calloc(PRINT_BUFFER_LENGTH, WAVE_DATA_WIDTH);
 
 	// navigate through all DFSDM audio memory on flash
 	while (printed_samples < data->num_of_samples) {
@@ -79,13 +84,12 @@ void AudioRecorder::print_data(WaveData * data) {
 		uint32_t read_samples = remaining_samples < PRINT_BUFFER_LENGTH ? remaining_samples : PRINT_BUFFER_LENGTH;
 
 		// read from flash
-		qspi_read((uint8_t*)buffer, data->qspi_address + printed_samples*DFSDM_DATA_WIDTH, read_samples*DFSDM_DATA_WIDTH);
+		qspi_read((uint8_t*)buffer, data->qspi_address + printed_samples*WAVE_DATA_WIDTH, read_samples*WAVE_DATA_WIDTH);
 
 		// print to terminal
 		for (uint32_t i = 0; i < PRINT_BUFFER_LENGTH; i++) {
 			char wav_str[10];
-			// print 16-bit format
-			sprintf(wav_str, "%d", (int)(buffer[i] >> 16));
+			sprintf(wav_str, "%d", (int)(buffer[i]));
 			print(wav_str);
 			print(",");
 		}

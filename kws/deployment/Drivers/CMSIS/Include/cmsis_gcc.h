@@ -148,7 +148,6 @@
 __STATIC_FORCEINLINE __NO_RETURN void __cmsis_start(void)
 {
 
-
   for (__copy_table_t const* pTable = &__copy_table_start__; pTable < &__copy_table_end__; ++pTable) {
     for(uint32_t i=0u; i<pTable->wlen; ++i) {
       pTable->dest[i] = pTable->src[i];

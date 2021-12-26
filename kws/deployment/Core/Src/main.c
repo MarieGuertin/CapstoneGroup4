@@ -23,17 +23,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
-#include "low_power.h"
-#include "qspi_handler.h"
-#include "audio_recorder.h"
-#include "audio_player.h"
-#include "arm_math.h"
-#include "ML-KWS-for-MCU/NN/DS_CNN/ds_cnn.h"
-#include "kws.h"
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,9 +32,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ARM_MATH_CM4
-#define ITM_Port32(n) (*((volatile unsigned long *) (0xE0000000+4*n)))
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -71,26 +57,6 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 
-// State Machine
-// SETUP: erasing Quad-SPI Flash
-// READY: waits for the user to push the button to start recording
-// RECORDING: records data from the DFSDM, waits for second push or timeout to stop
-// NN: preprocess the audio data and forward into the neural network
-// DAC_TEST: testing audio signal through the dac output
-enum MAIN_STATE {READY, SETUP, RECORDING, NN, AUDIO_TEST, MFCC_TEST};
-volatile enum MAIN_STATE main_state;
-
-// text buffer
-char uart_buffer[100] = "";
-
-AudioRecorder *audio_recorder;
-WaveData *wave_data;
-
-AudioPlayer *audio_player;
-//DACData *dac_data;
-
-// Flags
-uint8_t LOW_POWER_MODE = 1;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -149,134 +115,12 @@ int main(void)
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 
-  qspi_init();
-  HAL_TIM_Base_Start_IT(&htim2);
-  main_state = SETUP;
-
-  char output_class[12][8] = {"Silence", "Unknown","yes","no","up","down","left","right","on","off","stop","go"};
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	switch(main_state) {
-	case SETUP:
-	{
-		ITM_Port32(31) = 1;
-		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
-
-		// To indicate to user, don't do nothing when red light
-		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
-		qspi_erase_blocks(WAVE_DATA_QSPI_ADDRESS, 6);
-
-		ITM_Port32(31) = 2;
-		print("Press the blue button and say a keyword\r\n");
-		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_SET);
-	  	main_state = READY;
-		break;
-	}
-	case RECORDING:
-	{
-		ITM_Port32(31) = 3;
-		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
-
-		audio_recorder = new AudioRecorder(&hdfsdm1_filter0);
-		wave_data = audio_recorder->record_audio(WAVE_DATA_QSPI_ADDRESS);
-
-		ITM_Port32(31) = 4;
-		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
-//		main_state = NN;
-		audio_recorder->~AudioRecorder();
-		main_state = AUDIO_TEST;
-		break;
-	}
-	case NN:
-	{
-//		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
-//
-//		// input buffer
-//		q7_t *nn_input = (q7_t*) calloc(NUM_FRAMES*NUM_MFCC_COEFFS, sizeof(q7_t));
-//
-//		// output buffer
-//		q7_t *predictions = (q7_t*) calloc(NUM_OUTPUT_CLASSES, sizeof(q7_t));
-//
-//		int16_t *audio_buffer = (int32_t*) calloc(frame_len, sizeof(int16_t));
-//
-////		compute_mfcc_coefficients(mfcc_output, AUDIO_QSPI_ADDRESS, NUM_FRAMES, FRAME_LEN, FRAME_SHIFT, NUM_MFCC_COEFFS, MFCC_DEC_BITS);
-////		print("\nMFCC:\r\n");
-////		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
-////			char mfcc_coeff_str[10];
-////			sprintf(mfcc_coeff_str, "%d", (int8_t)(mfcc_output[i]));
-////			print(mfcc_coeff_str);
-////			if ((i+1) % NUM_MFCC_COEFFS == 0)
-////				print("\r\n");
-////			else
-////				print(",");
-////		}
-////		print("\r\n");
-//
-//		DS_CNN *ds_cnn = new DS_CNN();
-//		MFCC *mfcc = new MFCC(mfcc_num_features, frame_len, mfcc_num_dec_bits);
-//
-//		// TODO: sliding window predictions
-//		for (uint32_t i = 0; i < NUM_PREDICTIONS; i ++) {
-//
-//				int16_t *mfcc_in = (int16_t*) calloc(frame_len, sizeof(int16_t));
-//			//	int32_t audio_buffer_int32[frame_len];
-//			//	int16_t mfcc_in[frame_len];
-//
-//				uint32_t cur_qspi_address = audio_start_address;
-//				for (uint32_t i=0; i < num_frames; i ++) {
-//					qspi_read((uint8_t*)audio_buffer_int32, cur_qspi_address, frame_len * sizeof(int32_t));
-//					for (uint32_t j=0; j < frame_len; j++) {
-//						mfcc_in[j] = (int16_t)(audio_buffer_int32[j] >> 8);
-//					}
-//					mfcc->mfcc_compute(mfcc_in, mfcc_out + i * mfcc_num_features);
-//
-//					cur_qspi_address += frame_shift * sizeof(int32_t);
-//				}
-//				mfcc->~MFCC();
-//				free(mfcc_in);
-//				free(audio_buffer_int32);
-//			}
-//			ds_cnn->run_nn(nn_input, nn_output);
-//			arm_softmax_q7(nn_output,num_output_classes,nn_output);
-//
-//		}
-//		uint32_t pred_index = get_top_class(nn_output);
-//
-//		// 3. Print predictions
-//		sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
-//		print(uart_buffer);
-//
-//		ds_cnn->~DS_CNN();
-//		free(nn_input);
-//		free(mfcc_output);
-//		free(predictions);
-//		main_state = SETUP;
-		break;
-	}
-	case AUDIO_TEST:
-	{
-		audio_player = new AudioPlayer(&hdac1);
-		audio_player->play_audio(wave_data);
-
-		audio_recorder->print_data(wave_data);
-//		main_state = NN;
-		main_state = SETUP;
-		audio_player->~AudioPlayer();
-
-		break;
-	}
-	case READY:
-	{
-		if (LOW_POWER_MODE)
-			enter_sleep_mode();
-		break;
-	}
-	}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -638,90 +482,6 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-// callback function of GPIO interrupts
-void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
-{
-	switch(GPIO_Pin) {
-	case BUTTON_Pin:
-		switch(main_state) {
-		case READY:
-			main_state = RECORDING;
-			break;
-		case RECORDING:
-//			dfsdm_stop_flag = 1;
-			audio_recorder->dfsdm_stop_flag = 1;
-			break;
-		case SETUP:
-		case MFCC_TEST:
-		case AUDIO_TEST:
-		case NN:
-			break;
-		}
-		break;
-	}
-}
-
-// DAC Circular DMA callback functions
-void HAL_DAC_ConvHalfCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
-	if (hdac->Instance == DAC1) {
-		audio_player->played_samples += PLAY_HALF_BUFFER_LENGTH;
-		if (audio_player->played_samples >= MAX_RECORD_LENGTH) {
-			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
-				Error_Handler();
-			}
-			audio_player->dac_stop_flag = 1;
-		}
-		else {
-			audio_player->update_dac_buffer(0, PLAY_HALF_BUFFER_LENGTH);
-		}
-	}
-}
-
-void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
-	audio_player->played_samples += PLAY_HALF_BUFFER_LENGTH;
-	if (hdac->Instance == DAC1) {
-		if (audio_player->played_samples >= MAX_RECORD_LENGTH) {
-			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
-				Error_Handler();
-			}
-			audio_player->dac_stop_flag = 1;
-		}
-		else {
-			audio_player->update_dac_buffer(PLAY_HALF_BUFFER_LENGTH, PLAY_HALF_BUFFER_LENGTH);
-		}
-	}
-}
-
-// DFSDM Circular DMA Callback Functions
-void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
-	if (hdfsdm_filter == &hdfsdm1_filter0) {
-		audio_recorder->update_wave_buffer(0, RECORD_HALF_BUFFER_LENGTH);
-		if (audio_recorder->cur_data->num_of_samples >= MAX_RECORD_LENGTH) {
-			audio_recorder->dfsdm_stop_flag = 1;
-			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
-				Error_Handler();
-			}
-		}
-	}
-}
-
-void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
-	if (hdfsdm_filter == &hdfsdm1_filter0) {
-		audio_recorder->update_wave_buffer(RECORD_HALF_BUFFER_LENGTH, RECORD_HALF_BUFFER_LENGTH);
-		if (audio_recorder->cur_data->num_of_samples >= MAX_RECORD_LENGTH) {
-			audio_recorder->dfsdm_stop_flag = 1;
-			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
-				Error_Handler();
-			}
-		}
-
-	}
-}
-
-void print(const char* txt) {
-	strcpy(uart_buffer, txt);
-  	HAL_UART_Transmit(&huart1, (uint8_t *)uart_buffer, strlen(txt), 10);
-}
 /* USER CODE END 4 */
 
 /**
@@ -752,8 +512,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-	HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
-	__BKPT();
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
