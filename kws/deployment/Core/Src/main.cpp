@@ -26,6 +26,7 @@
 #include "low_power.h"
 #include "qspi_handler.h"
 #include "audio_recording.h"
+#include "audio_recorder.h"
 #include "arm_math.h"
 #include "ML-KWS-for-MCU/NN/DS_CNN/ds_cnn.h"
 #include "kws.h"
@@ -81,6 +82,8 @@ volatile enum MAIN_STATE main_state;
 
 // text buffer
 char uart_buffer[100] = "";
+
+AudioRecorder *audio_recorder;
 
 // Flags
 uint8_t LOW_POWER_MODE = 1;
@@ -148,7 +151,6 @@ int main(void)
 
   char output_class[12][8] = {"Silence", "Unknown","yes","no","up","down","left","right","on","off","stop","go"};
 
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -175,7 +177,10 @@ int main(void)
 	{
 		ITM_Port32(31) = 3;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
-		record_audio(&hdfsdm1_filter0);
+
+		audio_recorder = new AudioRecorder(&hdfsdm1_filter0);
+		audio_recorder->record_audio(DFSDM_AUDIO_QSPI_ADDRESS);
+
 		ITM_Port32(31) = 4;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
 //		main_state = NN;
@@ -250,9 +255,9 @@ int main(void)
 	}
 	case AUDIO_TEST:
 	{
-		convert_from_dfsdm_to_dac_range();
+		convert_from_dfsdm_to_dac_range(DFSDM_AUDIO_QSPI_ADDRESS, DAC_AUDIO_QSPI_ADDRESS, AUDIO_LENGTH);
 		play_audio(&hdac1);
-//		print_dfsdm_data();
+//		audio_recorder->print_data();
 //		main_state = NN;
 		main_state = SETUP;
 
@@ -636,7 +641,8 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 			main_state = RECORDING;
 			break;
 		case RECORDING:
-			dfsdm_stop_flag = 1;
+//			dfsdm_stop_flag = 1;
+			audio_recorder->dfsdm_stop_flag = 1;
 			break;
 		case SETUP:
 		case MFCC_TEST:
@@ -680,10 +686,9 @@ void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 // DFSDM Circular DMA Callback Functions
 void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	if (hdfsdm_filter == &hdfsdm1_filter0) {
-		update_dfsdm_buffer(hdfsdm_filter, dfsdm_buffer_ptr, (DFSDM_BUFFER_LENGTH * DFSDM_DATA_WIDTH / 2));
-
-		if (recorded_size >= DFSDM_AUDIO_SIZE) {
-			dfsdm_stop_flag = 1;
+		audio_recorder->update_dfsdm_buffer(0, (HALF_BUFFER_LENGTH * DFSDM_DATA_WIDTH));
+		if (audio_recorder->record->num_of_samples >= MAX_RECORD_LENGTH) {
+			audio_recorder->dfsdm_stop_flag = 1;
 			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
 				Error_Handler();
 			}
@@ -693,13 +698,14 @@ void HAL_DFSDM_FilterRegConvHalfCpltCallback (DFSDM_Filter_HandleTypeDef *hdfsdm
 
 void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter) {
 	if (hdfsdm_filter == &hdfsdm1_filter0) {
-		update_dfsdm_buffer(hdfsdm_filter, dfsdm_buffer_half_ptr, (DFSDM_BUFFER_LENGTH * DFSDM_DATA_WIDTH / 2));
-		if (recorded_size >= DFSDM_AUDIO_SIZE) {
-			dfsdm_stop_flag = 1;
+		audio_recorder->update_dfsdm_buffer(HALF_BUFFER_LENGTH, (HALF_BUFFER_LENGTH * DFSDM_DATA_WIDTH));
+		if (audio_recorder->record->num_of_samples >= MAX_RECORD_LENGTH) {
+			audio_recorder->dfsdm_stop_flag = 1;
 			if (HAL_DFSDM_FilterRegularStop_DMA(hdfsdm_filter) == HAL_ERROR) {
 				Error_Handler();
 			}
 		}
+
 	}
 }
 

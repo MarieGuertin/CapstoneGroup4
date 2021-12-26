@@ -38,7 +38,7 @@
 // DFSDM buffer pointers
 extern int32_t *dfsdm_buffer_ptr;
 extern int32_t *dfsdm_buffer_half_ptr;
-extern uint8_t	dfsdm_stop_flag;
+//extern uint8_t	dfsdm_stop_flag;
 extern uint32_t recorded_size;
 
 // DAC buffer pointers
@@ -52,7 +52,6 @@ void play_audio(DAC_HandleTypeDef *hdac);
 void record_audio(DFSDM_Filter_HandleTypeDef *hdfsdm_filter);
 void update_dfsdm_buffer(DFSDM_Filter_HandleTypeDef *hdfsdm_filter, int32_t *dfsdm_buffer_ptr, uint32_t size);
 void update_dac_buffer(DAC_HandleTypeDef *hdac, uint32_t *dac_buffer_ptr, uint32_t size);
-void convert_from_dfsdm_to_dac_range();
-void init_qspi();
-void print_dfsdm_data();
+void convert_from_dfsdm_to_dac_range(uint32_t dfsdm_audio_qspi_address, uint32_t dac_audio_qspi_address, uint32_t audio_length);
+void print_dfsdm_data(uint32_t dfsdm_audio_qspi_address, uint32_t audio_length);
 #endif /* INC_AUDIO_RECORDING_H_ */
