@@ -23,14 +23,15 @@
 #define DFSDM_DATA_WIDTH ((uint32_t) 4) // bytes
 #define DFSDM_MIN ((float)-8388608) // signed 24-bit int min
 #define DFSDM_MAX ((float)8388608) // signed 24-bit int max
-#define DFSDM_AUDIO_QSPI_ADDRESS (0xA0000)
 
-class DFSDMData {
+#define WAVE_DATA_QSPI_ADDRESS (0xA0000)
+
+class WaveData {
 public:
 	uint32_t num_of_samples;
 	uint32_t qspi_address;
-	DFSDMData(uint32_t qspi_address);
-	~DFSDMData();
+	WaveData(uint32_t qspi_address);
+	~WaveData();
 };
 
 class AudioRecorder {
@@ -40,10 +41,10 @@ private:
 public:
 	AudioRecorder(DFSDM_Filter_HandleTypeDef *hdfsdm_filter);
 	~AudioRecorder();
-	DFSDMData * record_audio(uint32_t qspi_address);
+	WaveData * record_audio(uint32_t qspi_address);
 	void update_dfsdm_buffer(uint32_t offset, uint32_t size);
-	void print_data(DFSDMData *data);
-	DFSDMData *cur_data;
+	void print_data(WaveData *data);
+	WaveData *cur_data;
 	uint8_t dfsdm_stop_flag;
 	DFSDM_Filter_HandleTypeDef *hdfsdm_filter;
 };

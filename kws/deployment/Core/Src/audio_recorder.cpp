@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include<stdio.h>
 
-DFSDMData::DFSDMData(uint32_t qspi_address)
+WaveData::WaveData(uint32_t qspi_address)
 : qspi_address(qspi_address)
 {
 	num_of_samples = 0;
@@ -31,9 +31,9 @@ AudioRecorder::~AudioRecorder() {
 }
 
 // record audio
-DFSDMData * AudioRecorder::record_audio(uint32_t qspi_address) {
+WaveData * AudioRecorder::record_audio(uint32_t qspi_address) {
 	// create audio record instance
-	cur_data = new DFSDMData(qspi_address);
+	cur_data = new WaveData(qspi_address);
 
 	// start DFSDM
 	dfsdm_buffer = (int32_t*) calloc(RECORD_BUFFER_LENGTH, DFSDM_DATA_WIDTH);
@@ -66,7 +66,7 @@ void AudioRecorder::update_dfsdm_buffer(uint32_t offset, uint32_t size) {
 }
 
 // print recorded data in 16-bit signed format
-void AudioRecorder::print_data(DFSDMData * data) {
+void AudioRecorder::print_data(WaveData * data) {
 	// flash address pointers
 	uint32_t printed_samples = 0;
 

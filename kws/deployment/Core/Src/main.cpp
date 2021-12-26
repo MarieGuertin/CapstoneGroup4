@@ -84,10 +84,10 @@ volatile enum MAIN_STATE main_state;
 char uart_buffer[100] = "";
 
 AudioRecorder *audio_recorder;
-DFSDMData *dfsdm_data;
+WaveData *wave_data;
 
 AudioPlayer *audio_player;
-DACData *dac_data;
+//DACData *dac_data;
 
 // Flags
 uint8_t LOW_POWER_MODE = 1;
@@ -169,7 +169,7 @@ int main(void)
 
 		// To indicate to user, don't do nothing when red light
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
-		qspi_erase_blocks(DFSDM_AUDIO_QSPI_ADDRESS, 6);
+		qspi_erase_blocks(WAVE_DATA_QSPI_ADDRESS, 6);
 
 		ITM_Port32(31) = 2;
 		print("Press the blue button and say a keyword\r\n");
@@ -183,7 +183,7 @@ int main(void)
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
 
 		audio_recorder = new AudioRecorder(&hdfsdm1_filter0);
-		dfsdm_data = audio_recorder->record_audio(DFSDM_AUDIO_QSPI_ADDRESS);
+		wave_data = audio_recorder->record_audio(WAVE_DATA_QSPI_ADDRESS);
 
 		ITM_Port32(31) = 4;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
@@ -261,8 +261,8 @@ int main(void)
 	case AUDIO_TEST:
 	{
 		audio_player = new AudioPlayer(&hdac1);
-		dac_data = audio_player->create_dac_data(dfsdm_data);
-		audio_player->play_audio(dac_data);
+//		dac_data = audio_player->create_dac_data(dfsdm_data);
+		audio_player->play_audio(wave_data);
 
 //		audio_recorder->print_data();
 //		main_state = NN;
@@ -665,28 +665,30 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 // DAC Circular DMA callback functions
 void HAL_DAC_ConvHalfCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
 	if (hdac->Instance == DAC1) {
-		if (audio_player->cur_data->played_samples >= MAX_RECORD_LENGTH) {
+		audio_player->played_samples += PLAY_HALF_BUFFER_LENGTH;
+		if (audio_player->played_samples >= MAX_RECORD_LENGTH) {
 			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
 				Error_Handler();
 			}
 			audio_player->dac_stop_flag = 1;
 		}
 		else {
-			audio_player->update_dac_buffer(0, (PLAY_HALF_BUFFER_LENGTH * DAC_DATA_WIDTH));
+			audio_player->update_dac_buffer(0, PLAY_HALF_BUFFER_LENGTH);
 		}
 	}
 }
 
 void HAL_DAC_ConvCpltCallbackCh1 (DAC_HandleTypeDef * hdac) {
+	audio_player->played_samples += PLAY_HALF_BUFFER_LENGTH;
 	if (hdac->Instance == DAC1) {
-		if (audio_player->cur_data->played_samples >= MAX_RECORD_LENGTH) {
+		if (audio_player->played_samples >= MAX_RECORD_LENGTH) {
 			if (HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1) == HAL_ERROR) {
 				Error_Handler();
 			}
 			audio_player->dac_stop_flag = 1;
 		}
 		else {
-			audio_player->update_dac_buffer(PLAY_HALF_BUFFER_LENGTH, (PLAY_HALF_BUFFER_LENGTH * DAC_DATA_WIDTH));
+			audio_player->update_dac_buffer(PLAY_HALF_BUFFER_LENGTH, PLAY_HALF_BUFFER_LENGTH);
 		}
 	}
 }
