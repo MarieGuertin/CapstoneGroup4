@@ -52,10 +52,9 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-void erase_blocks(uint32_t start_address, uint32_t n);
-void print(const char* txt);
 
 /* USER CODE BEGIN EFP */
+void print(const char* txt);
 
 /* USER CODE END EFP */
 
