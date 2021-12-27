@@ -36,8 +36,8 @@ WaveData * AudioRecorder::record_audio(uint32_t qspi_address) {
 	cur_data = new WaveData(qspi_address);
 
 	// start DFSDM
-	dfsdm_buffer = (int32_t*) calloc(RECORD_BUFFER_LENGTH, DFSDM_DATA_WIDTH);
 	wave_buffer = (int16_t*) calloc(RECORD_BUFFER_LENGTH, WAVE_DATA_WIDTH);
+	dfsdm_buffer = (int32_t*) calloc(RECORD_BUFFER_LENGTH, DFSDM_DATA_WIDTH);
 
 	dfsdm_stop_flag = 0;
 	if (HAL_DFSDM_FilterRegularStart_DMA(hdfsdm_filter, dfsdm_buffer,RECORD_BUFFER_LENGTH) == HAL_ERROR) {

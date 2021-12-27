@@ -29,6 +29,7 @@
 #include "audio_player.h"
 #include "arm_math.h"
 #include "ML-KWS-for-MCU/NN/DS_CNN/ds_cnn.h"
+#include "ML-KWS-for-MCU/MFCC/mfcc.h"
 #include "kws.h"
 #include <stdlib.h>
 #include <math.h>
@@ -194,68 +195,46 @@ int main(void)
 	}
 	case NN:
 	{
-//		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
-//
-//		// input buffer
-//		q7_t *nn_input = (q7_t*) calloc(NUM_FRAMES*NUM_MFCC_COEFFS, sizeof(q7_t));
-//
-//		// output buffer
-//		q7_t *predictions = (q7_t*) calloc(NUM_OUTPUT_CLASSES, sizeof(q7_t));
-//
-//		int16_t *audio_buffer = (int32_t*) calloc(frame_len, sizeof(int16_t));
-//
-////		compute_mfcc_coefficients(mfcc_output, AUDIO_QSPI_ADDRESS, NUM_FRAMES, FRAME_LEN, FRAME_SHIFT, NUM_MFCC_COEFFS, MFCC_DEC_BITS);
-////		print("\nMFCC:\r\n");
-////		for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
-////			char mfcc_coeff_str[10];
-////			sprintf(mfcc_coeff_str, "%d", (int8_t)(mfcc_output[i]));
-////			print(mfcc_coeff_str);
-////			if ((i+1) % NUM_MFCC_COEFFS == 0)
-////				print("\r\n");
-////			else
-////				print(",");
-////		}
-////		print("\r\n");
-//
-//		DS_CNN *ds_cnn = new DS_CNN();
-//		MFCC *mfcc = new MFCC(mfcc_num_features, frame_len, mfcc_num_dec_bits);
-//
-//		// TODO: sliding window predictions
-//		for (uint32_t i = 0; i < NUM_PREDICTIONS; i ++) {
-//
-//				int16_t *mfcc_in = (int16_t*) calloc(frame_len, sizeof(int16_t));
-//			//	int32_t audio_buffer_int32[frame_len];
-//			//	int16_t mfcc_in[frame_len];
-//
-//				uint32_t cur_qspi_address = audio_start_address;
-//				for (uint32_t i=0; i < num_frames; i ++) {
-//					qspi_read((uint8_t*)audio_buffer_int32, cur_qspi_address, frame_len * sizeof(int32_t));
-//					for (uint32_t j=0; j < frame_len; j++) {
-//						mfcc_in[j] = (int16_t)(audio_buffer_int32[j] >> 8);
-//					}
-//					mfcc->mfcc_compute(mfcc_in, mfcc_out + i * mfcc_num_features);
-//
-//					cur_qspi_address += frame_shift * sizeof(int32_t);
-//				}
-//				mfcc->~MFCC();
-//				free(mfcc_in);
-//				free(audio_buffer_int32);
-//			}
-//			ds_cnn->run_nn(nn_input, nn_output);
-//			arm_softmax_q7(nn_output,num_output_classes,nn_output);
-//
-//		}
-//		uint32_t pred_index = get_top_class(nn_output);
-//
-//		// 3. Print predictions
-//		sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
-//		print(uart_buffer);
-//
-//		ds_cnn->~DS_CNN();
-//		free(nn_input);
-//		free(mfcc_output);
-//		free(predictions);
-//		main_state = SETUP;
+		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
+
+		// input buffer
+		int16_t *audio_buffer = (int16_t*) calloc((RECORDING_WINDOW_LENGTH+1)*FRAME_SHIFT, WAVE_DATA_WIDTH);
+
+		// mfcc coefficients
+		q7_t *mfcc_out = (q7_t*) calloc(NUM_FRAMES * NUM_MFCC_COEFFS, sizeof(q7_t));
+
+		// output buffer
+		q7_t *nn_out = (q7_t*) calloc(NUM_OUTPUT_CLASSES, sizeof(q7_t));
+
+		q7_t *mfcc_head;
+		DS_CNN *ds_cnn = new DS_CNN();
+		MFCC *mfcc = new MFCC(NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
+
+		// Version 1: Read one timeframe at the time, compute its mfcc coefficients,
+		//            run predictions and shift coefficients.
+		for (uint32_t i = 0; i < NUM_FRAMES; i ++) {
+				if (i % RECORDING_WINDOW_LENGTH == 0) {
+					qspi_read((uint8_t*)audio_buffer, WAVE_DATA_QSPI_ADDRESS + (i * FRAME_SHIFT * WAVE_DATA_WIDTH), RECORDING_WINDOW_SIZE);
+					// move old data to the left
+					memmove(mfcc_out, mfcc_out + (RECORDING_WINDOW_LENGTH * NUM_MFCC_COEFFS), (NUM_FRAMES - RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS * sizeof(q7_t));
+					mfcc_head = mfcc_out + ((NUM_FRAMES-RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS);
+					for (uint32_t j = 0; j < RECORDING_WINDOW_LENGTH; j ++) {
+						mfcc->mfcc_compute(audio_buffer + (j * FRAME_SHIFT), mfcc_head);
+						mfcc_head += NUM_MFCC_COEFFS;
+					}
+					ds_cnn->run_nn(mfcc_out, nn_out);
+					arm_softmax_q7(nn_out,NUM_OUTPUT_CLASSES,nn_out);
+					uint32_t pred_index = get_top_class(nn_out);
+					sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
+					print(uart_buffer);
+				}
+		}
+		mfcc->~MFCC();
+		ds_cnn->~DS_CNN();
+		free(mfcc_out);
+		free(nn_out);
+		free(audio_buffer);
+		main_state = SETUP;
 		break;
 	}
 	case AUDIO_TEST:
@@ -263,9 +242,9 @@ int main(void)
 		audio_player = new AudioPlayer(&hdac1);
 		audio_player->play_audio(wave_data);
 
-		audio_recorder->print_data(wave_data);
-//		main_state = NN;
-		main_state = SETUP;
+//		audio_recorder->print_data(wave_data);
+		main_state = NN;
+//		main_state = SETUP;
 		audio_player->~AudioPlayer();
 
 		break;
