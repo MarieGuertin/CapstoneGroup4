@@ -180,9 +180,9 @@ int main(void)
 	}
 	case RECORDING:
 	{
+		HAL_Delay(1000);
 		ITM_Port32(31) = 3;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
-
 		audio_recorder = new AudioRecorder(&hdfsdm1_filter0);
 		wave_data = audio_recorder->record_audio(WAVE_DATA_QSPI_ADDRESS);
 
@@ -198,42 +198,82 @@ int main(void)
 		HAL_GPIO_WritePin(RED_LED_GPIO_Port, RED_LED_Pin, GPIO_PIN_RESET);
 
 		// input buffer
-		int16_t *audio_buffer = (int16_t*) calloc((RECORDING_WINDOW_LENGTH+1)*FRAME_SHIFT, WAVE_DATA_WIDTH);
+		int16_t *audio_buffer = new int16_t[(RECORDING_WINDOW_LENGTH+1)*FRAME_SHIFT];
 
 		// mfcc coefficients
 		q7_t *mfcc_out = (q7_t*) calloc(NUM_FRAMES * NUM_MFCC_COEFFS, sizeof(q7_t));
 
 		// output buffer
-		q7_t *nn_out = (q7_t*) calloc(NUM_OUTPUT_CLASSES, sizeof(q7_t));
+		q7_t *predictions = (q7_t*) calloc(NUM_PREDICTIONS * NUM_OUTPUT_CLASSES, sizeof(q7_t));
+
+		// average predictions
+		q7_t *average = new q7_t[NUM_OUTPUT_CLASSES];
+
+		uint32_t pred_index;
 
 		q7_t *mfcc_head;
 		DS_CNN *ds_cnn = new DS_CNN();
 		MFCC *mfcc = new MFCC(NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
 
-		// Version 1: Read one timeframe at the time, compute its mfcc coefficients,
-		//            run predictions and shift coefficients.
-		for (uint32_t i = 0; i < NUM_FRAMES; i ++) {
-				if (i % RECORDING_WINDOW_LENGTH == 0) {
-					qspi_read((uint8_t*)audio_buffer, WAVE_DATA_QSPI_ADDRESS + (i * FRAME_SHIFT * WAVE_DATA_WIDTH), RECORDING_WINDOW_SIZE);
-					// move old data to the left
-					memmove(mfcc_out, mfcc_out + (RECORDING_WINDOW_LENGTH * NUM_MFCC_COEFFS), (NUM_FRAMES - RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS * sizeof(q7_t));
-					mfcc_head = mfcc_out + ((NUM_FRAMES-RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS);
-					for (uint32_t j = 0; j < RECORDING_WINDOW_LENGTH; j ++) {
-						mfcc->mfcc_compute(audio_buffer + (j * FRAME_SHIFT), mfcc_head);
-						mfcc_head += NUM_MFCC_COEFFS;
-					}
-					ds_cnn->run_nn(mfcc_out, nn_out);
-					arm_softmax_q7(nn_out,NUM_OUTPUT_CLASSES,nn_out);
-					uint32_t pred_index = get_top_class(nn_out);
-					sprintf(uart_buffer, "You said: \"%s\"\r\n", output_class[pred_index]);
+		bool keyword_flag = false;
+		bool silence_flag = false;
+		q7_t *average_window_head = predictions;
+		for (uint32_t i = 0; i < NUM_PREDICTIONS; i ++) {
+				qspi_read((uint8_t*)audio_buffer, WAVE_DATA_QSPI_ADDRESS + (i * RECORDING_WINDOW_LENGTH * FRAME_SHIFT * WAVE_DATA_WIDTH), RECORDING_WINDOW_SIZE);
+				// move old data to the left
+				arm_copy_q7(mfcc_out + (RECORDING_WINDOW_LENGTH * NUM_MFCC_COEFFS), mfcc_out, (NUM_FRAMES - RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS * sizeof(q7_t));
+				mfcc_head = mfcc_out + ((NUM_FRAMES-RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS);
+				for (uint32_t j = 0; j < RECORDING_WINDOW_LENGTH; j ++) {
+					mfcc->mfcc_compute(audio_buffer + (j * FRAME_SHIFT), mfcc_head);
+					mfcc_head += NUM_MFCC_COEFFS;
+				}
+				q7_t* nn_out = predictions + (i * NUM_OUTPUT_CLASSES);
+				ds_cnn->run_nn(mfcc_out, nn_out);
+				arm_softmax_q7(nn_out,NUM_OUTPUT_CLASSES,nn_out);
+
+				// get prediction for each recordign window
+//				pred_index = get_top_class(nn_out);
+//				sprintf(uart_buffer, "Instance: \"%s\" score: %d\r\n", output_class[pred_index], nn_out[pred_index]);
+//				print(uart_buffer);
+
+				// increment average window pointer
+				if (i >= AVERAGE_WINDOW_LENGTH) {
+					average_window_head += NUM_OUTPUT_CLASSES;
+				}
+				average_predictions(average, average_window_head, AVERAGE_WINDOW_LENGTH, NUM_OUTPUT_CLASSES);
+				pred_index = get_top_class(average);
+
+				if (average[pred_index] / 128.0 * 100 > DETECTION_THRESHOLD) {
+					sprintf(uart_buffer, "Prediction: \"%s\" score: %d\r\n", output_class[pred_index], average[pred_index]);
 					print(uart_buffer);
+					if (pred_index != SILENCE_INDEX) {
+						// keyword detected, no silence anymore
+						silence_flag = false;
+						keyword_flag = true;
+						break;
+					}
+					else {
+						// raise silence flag if not prior keyword detected
+						if (!keyword_flag)
+							silence_flag = true;
+					}
 				}
 		}
+		// check for silence
+		if (silence_flag) {
+			print("Silence\r\n");
+		}
+		// no silence and no keyword detected--> unknown
+		else if (!keyword_flag) {
+			print("Unknown\r\n");
+		}
+
 		mfcc->~MFCC();
 		ds_cnn->~DS_CNN();
-		free(mfcc_out);
-		free(nn_out);
-		free(audio_buffer);
+		delete [] mfcc_out;
+		delete [] predictions;
+		delete [] average;
+		delete [] audio_buffer;
 		main_state = SETUP;
 		break;
 	}

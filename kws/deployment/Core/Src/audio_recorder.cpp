@@ -36,8 +36,8 @@ WaveData * AudioRecorder::record_audio(uint32_t qspi_address) {
 	cur_data = new WaveData(qspi_address);
 
 	// start DFSDM
-	wave_buffer = (int16_t*) calloc(RECORD_BUFFER_LENGTH, WAVE_DATA_WIDTH);
-	dfsdm_buffer = (int32_t*) calloc(RECORD_BUFFER_LENGTH, DFSDM_DATA_WIDTH);
+	wave_buffer = new int16_t[RECORD_BUFFER_LENGTH];
+	dfsdm_buffer = new int32_t[RECORD_BUFFER_LENGTH];
 
 	dfsdm_stop_flag = 0;
 	if (HAL_DFSDM_FilterRegularStart_DMA(hdfsdm_filter, dfsdm_buffer,RECORD_BUFFER_LENGTH) == HAL_ERROR) {
@@ -76,7 +76,7 @@ void AudioRecorder::print_data(WaveData * data) {
 	uint32_t printed_samples = 0;
 
 	// buffer
-	int16_t *buffer = (int16_t *) calloc(PRINT_BUFFER_LENGTH, WAVE_DATA_WIDTH);
+	int16_t *buffer = new int16_t[PRINT_BUFFER_LENGTH];
 
 	// navigate through all DFSDM audio memory on flash
 	while (printed_samples < data->num_of_samples) {

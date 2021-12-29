@@ -27,6 +27,18 @@ uint32_t get_top_class(q7_t* nn_output) {
 	return max_index;
 }
 
+void average_predictions(q7_t *average_out, q7_t* average_window_head, uint32_t num_predictions, uint32_t num_output_classes) {
+	q15_t *sum = new q15_t[num_output_classes];
+	for (uint32_t i = 0; i < num_output_classes; i++) {
+		sum[i] = 0;
+		for (uint32_t j = 0; j < num_predictions; j++) {
+			sum[i] += average_window_head[j * num_output_classes + i];
+		}
+		average_out[i] = sum[i] / (float) num_predictions;
+	}
+	delete [] sum;
+}
+
 void print_mfcc(q7_t *mfcc_out) {
 	print("\nMFCC:\r\n");
 	for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {

@@ -32,8 +32,8 @@ void AudioPlayer::play_audio(WaveData * data) {
 	played_samples = 0;
 	converted_samples = 0;
 
-	conversion_buffer = (uint16_t *) calloc(PLAY_BUFFER_LENGTH, WAVE_DATA_WIDTH);
-	dac_buffer = (uint16_t *) calloc(PLAY_BUFFER_LENGTH, DAC_DATA_WIDTH);
+	conversion_buffer = new uint16_t[PLAY_BUFFER_LENGTH];
+	dac_buffer = new uint16_t[PLAY_BUFFER_LENGTH];
 
 
 	// initial full read
