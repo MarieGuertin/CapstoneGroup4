@@ -25,8 +25,8 @@
 #define SILENCE_INDEX ((uint32_t) 0)
 
 // TODO: tweak these parameters to find optimal combination
-#define RECORDING_WINDOW_LENGTH ((uint32_t)7)
-#define DETECTION_THRESHOLD ((uint32_t) 90)
+#define RECORDING_WINDOW_LENGTH ((uint32_t)5)
+#define DETECTION_THRESHOLD ((uint32_t) 45)
 #define AVERAGE_WINDOW_LENGTH ((uint32_t) 3)
 
 void compute_mfcc_coefficients(q7_t *mfcc_out, uint32_t audio_start_address, uint32_t num_frames, uint32_t frame_len, uint32_t frame_shift, uint32_t mfcc_num_features, uint32_t mfcc_num_dec_bits);

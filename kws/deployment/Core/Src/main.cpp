@@ -92,6 +92,8 @@ AudioPlayer *audio_player;
 
 // Flags
 uint8_t LOW_POWER_MODE = 1;
+uint8_t DEBUG_MODE = 1;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -180,7 +182,6 @@ int main(void)
 	}
 	case RECORDING:
 	{
-		HAL_Delay(1000);
 		ITM_Port32(31) = 3;
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_SET);
 		audio_recorder = new AudioRecorder(&hdfsdm1_filter0);
@@ -215,8 +216,8 @@ int main(void)
 		DS_CNN *ds_cnn = new DS_CNN();
 		MFCC *mfcc = new MFCC(NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
 
-		bool keyword_flag = false;
-		bool silence_flag = false;
+		bool keyword_detected = false;
+
 		q7_t *average_window_head = predictions;
 		for (uint32_t i = 0; i < NUM_PREDICTIONS; i ++) {
 				qspi_read((uint8_t*)audio_buffer, WAVE_DATA_QSPI_ADDRESS + (i * RECORDING_WINDOW_LENGTH * FRAME_SHIFT * WAVE_DATA_WIDTH), RECORDING_WINDOW_SIZE);
@@ -229,12 +230,14 @@ int main(void)
 				}
 				q7_t* nn_out = predictions + (i * NUM_OUTPUT_CLASSES);
 				ds_cnn->run_nn(mfcc_out, nn_out);
-				arm_softmax_q7(nn_out,NUM_OUTPUT_CLASSES,nn_out);
+//				arm_softmax_q7(nn_out,NUM_OUTPUT_CLASSES,nn_out);
 
-				// get prediction for each recordign window
-//				pred_index = get_top_class(nn_out);
-//				sprintf(uart_buffer, "Instance: \"%s\" score: %d\r\n", output_class[pred_index], nn_out[pred_index]);
-//				print(uart_buffer);
+				// get prediction for each recording window
+				if (DEBUG_MODE) {
+					pred_index = get_top_class(nn_out);
+					sprintf(uart_buffer, "Prediction: \"%s\" score: %d\r\n", output_class[pred_index], nn_out[pred_index]);
+					print(uart_buffer);
+				}
 
 				// increment average window pointer
 				if (i >= AVERAGE_WINDOW_LENGTH) {
@@ -243,29 +246,21 @@ int main(void)
 				average_predictions(average, average_window_head, AVERAGE_WINDOW_LENGTH, NUM_OUTPUT_CLASSES);
 				pred_index = get_top_class(average);
 
-				if (average[pred_index] / 128.0 * 100 > DETECTION_THRESHOLD) {
-					sprintf(uart_buffer, "Prediction: \"%s\" score: %d\r\n", output_class[pred_index], average[pred_index]);
+				if (DEBUG_MODE) {
+					sprintf(uart_buffer, "Average: \"%s\" score: %d\r\n", output_class[pred_index], average[pred_index]);
 					print(uart_buffer);
-					if (pred_index != SILENCE_INDEX) {
-						// keyword detected, no silence anymore
-						silence_flag = false;
-						keyword_flag = true;
-						break;
-					}
-					else {
-						// raise silence flag if not prior keyword detected
-						if (!keyword_flag)
-							silence_flag = true;
-					}
+				}
+
+				if (average[pred_index] / 128.0 * 100 > DETECTION_THRESHOLD) {
+					sprintf(uart_buffer, "Keyword Detected: \"%s\"\r\n", output_class[pred_index]);
+					print(uart_buffer);
+					keyword_detected = true;
+					break;
 				}
 		}
-		// check for silence
-		if (silence_flag) {
-			print("Silence\r\n");
-		}
-		// no silence and no keyword detected--> unknown
-		else if (!keyword_flag) {
-			print("Unknown\r\n");
+
+		if (!keyword_detected) {
+			print("No keyword detected.");
 		}
 
 		mfcc->~MFCC();
