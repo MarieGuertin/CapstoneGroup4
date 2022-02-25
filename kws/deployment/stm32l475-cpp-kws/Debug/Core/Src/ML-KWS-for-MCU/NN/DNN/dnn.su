@@ -1,0 +1,5 @@
+nn.h:24:7:NN::NN()	16	static
+dnn.cpp:49:1:DNN::DNN()	16	static
+dnn.cpp:64:1:DNN::~DNN()	16	static
+dnn.cpp:64:1:virtual DNN::~DNN()	16	static
+dnn.cpp:69:6:virtual void DNN::run_nn(q7_t*, q7_t*)	48	static

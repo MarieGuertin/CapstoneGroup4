@@ -1,0 +1,8 @@
+nn.cpp:21:1:NN::~NN()	16	static
+nn.cpp:21:1:virtual NN::~NN()	16	static
+nn.cpp:24:5:int NN::get_frame_len()	16	static
+nn.cpp:28:5:int NN::get_frame_shift()	16	static
+nn.cpp:32:5:int NN::get_num_mfcc_features()	16	static
+nn.cpp:36:5:int NN::get_num_frames()	16	static
+nn.cpp:40:5:int NN::get_num_out_classes()	16	static
+nn.cpp:44:5:int NN::get_in_dec_bits()	16	static

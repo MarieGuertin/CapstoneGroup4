@@ -1,0 +1,9 @@
+cmath:1756:3:constexpr float std::round(float)	16	static
+mfcc.h:54:25:static float MFCC::MelScale(float)	16	static
+cmath:350:5:constexpr typename __gnu_cxx::__enable_if<std::__is_integer<_Tp>::__value, double>::__type std::log(_Tp) [with _Tp = int]	16	static
+cmath:415:5:constexpr typename __gnu_cxx::__promote_2<_Tp, _Up>::__type std::pow(_Tp, _Up) [with _Tp = int; _Up = double]	24	static
+mfcc.cpp:29:1:MFCC::MFCC(int, int, int)	40	static
+mfcc.cpp:61:1:MFCC::~MFCC()	24	static
+mfcc.cpp:75:9:float* MFCC::create_dct_matrix(int32_t, int32_t)	64	static
+mfcc.cpp:88:10:float** MFCC::create_mel_fbank()	96	static
+mfcc.cpp:144:6:void MFCC::mfcc_compute(const int16_t*, q7_t*)	96	static

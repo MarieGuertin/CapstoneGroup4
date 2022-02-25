@@ -1,0 +1,5 @@
+qspi_handler.cpp:12:6:void qspi_read(uint8_t*, uint32_t, uint32_t)	24	static
+qspi_handler.cpp:17:6:void qspi_write(uint8_t*, uint32_t, uint32_t)	24	static
+qspi_handler.cpp:23:6:void qspi_init()	8	static
+qspi_handler.cpp:27:6:void qspi_erase_block(uint32_t)	16	static
+qspi_handler.cpp:31:6:void qspi_erase_blocks(uint32_t, uint32_t)	24	static
