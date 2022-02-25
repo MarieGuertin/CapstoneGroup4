@@ -1,4 +1,4 @@
-# CapstoneGroup4
+# Edge AI: Integration of Speech Recognition Models on Cortex-M4 and Cortex-M7 Development Boards
 
 https://huggingface.co/speechbrain/slu-timers-and-such-direct-librispeech-asr/tree/main
 
