@@ -55,6 +55,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void print(const char* txt);
+void BLUE_BUTTON_WAIT ();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

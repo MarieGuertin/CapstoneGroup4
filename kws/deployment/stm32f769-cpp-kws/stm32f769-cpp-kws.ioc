@@ -2,9 +2,11 @@
 DAC.DAC_Trigger=DAC_TRIGGER_T2_TRGO
 DAC.IPParameters=DAC_Trigger
 DFSDM1.Divider=68
+DFSDM1.DmaMode_reg_FIL0=ENABLE
+DFSDM1.FastMode_reg_FIL0=ENABLE
 DFSDM1.Filter_regChannel_FIL0=DFSDM_CHANNEL_2
 DFSDM1.Fosr_FIL0=200
-DFSDM1.IPParameters=Filter_regChannel_FIL0,SincOrder_FIL0,Divider,Fosr_FIL0
+DFSDM1.IPParameters=Filter_regChannel_FIL0,SincOrder_FIL0,Divider,Fosr_FIL0,FastMode_reg_FIL0,DmaMode_reg_FIL0
 DFSDM1.SincOrder_FIL0=DFSDM_FILTER_SINC3_ORDER
 Dma.DAC1.0.Direction=DMA_MEMORY_TO_PERIPH
 Dma.DAC1.0.FIFOMode=DMA_FIFOMODE_DISABLE
