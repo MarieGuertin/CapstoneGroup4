@@ -31,8 +31,8 @@
 
 class AudioPlayer {
 private:
-	uint16_t *sai_buffer;
-	uint16_t *conversion_buffer;
+	int16_t *sai_buffer;
+//	uint16_t *conversion_buffer;
 
 public:
 	AudioPlayer(SAI_HandleTypeDef *hsai);
