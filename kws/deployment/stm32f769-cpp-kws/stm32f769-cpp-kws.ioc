@@ -1,9 +1,9 @@
 #MicroXplorer Configuration settings - do not modify
-DFSDM1.Divider=68
+DFSDM1.Divider=67
 DFSDM1.DmaMode_reg_FIL0=ENABLE
 DFSDM1.FastMode_reg_FIL0=ENABLE
 DFSDM1.Filter_regChannel_FIL0=DFSDM_CHANNEL_5
-DFSDM1.Fosr_FIL0=200
+DFSDM1.Fosr_FIL0=400
 DFSDM1.IPParameters=Filter_regChannel_FIL0,SincOrder_FIL0,Fosr_FIL0,Divider,FastMode_reg_FIL0,DmaMode_reg_FIL0
 DFSDM1.SincOrder_FIL0=DFSDM_FILTER_SINC3_ORDER
 Dma.DFSDM1_FLT0.1.Direction=DMA_PERIPH_TO_MEMORY

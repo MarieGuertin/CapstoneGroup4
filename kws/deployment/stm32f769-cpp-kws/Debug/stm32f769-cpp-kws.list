@@ -4445,9 +4445,9 @@ static void MX_DFSDM1_Init(void)
  8002324:	4b23      	ldr	r3, [pc, #140]	; (80023b4 <_ZL14MX_DFSDM1_Initv+0xac>)
  8002326:	f04f 42c0 	mov.w	r2, #1610612736	; 0x60000000
  800232a:	61da      	str	r2, [r3, #28]
-  hdfsdm1_filter0.Init.FilterParam.Oversampling = 200;
+  hdfsdm1_filter0.Init.FilterParam.Oversampling = 100;
  800232c:	4b21      	ldr	r3, [pc, #132]	; (80023b4 <_ZL14MX_DFSDM1_Initv+0xac>)
- 800232e:	22c8      	movs	r2, #200	; 0xc8
+ 800232e:	2264      	movs	r2, #100	; 0x64
  8002330:	621a      	str	r2, [r3, #32]
   hdfsdm1_filter0.Init.FilterParam.IntOversampling = 1;
  8002332:	4b20      	ldr	r3, [pc, #128]	; (80023b4 <_ZL14MX_DFSDM1_Initv+0xac>)

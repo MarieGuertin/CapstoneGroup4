@@ -375,7 +375,7 @@ static void MX_DFSDM1_Init(void)
   hdfsdm1_filter0.Init.RegularParam.FastMode = ENABLE;
   hdfsdm1_filter0.Init.RegularParam.DmaMode = ENABLE;
   hdfsdm1_filter0.Init.FilterParam.SincOrder = DFSDM_FILTER_SINC3_ORDER;
-  hdfsdm1_filter0.Init.FilterParam.Oversampling = 200;
+  hdfsdm1_filter0.Init.FilterParam.Oversampling = 100;
   hdfsdm1_filter0.Init.FilterParam.IntOversampling = 1;
   HAL_DFSDM_FilterInit(&hdfsdm1_filter0);
   hdfsdm1_channel5.Instance = DFSDM1_Channel5;
