@@ -65,6 +65,7 @@ void BLUE_BUTTON_WAIT ();
 #define GREEN_LED_GPIO_Port GPIOJ
 #define BLUE_BUTTON_Pin GPIO_PIN_0
 #define BLUE_BUTTON_GPIO_Port GPIOA
+#define BLUE_BUTTON_EXTI_IRQn EXTI0_IRQn
 /* USER CODE BEGIN Private defines */
 extern uint8_t LOW_POWER_MODE;
 extern char uart_buffer[100];

@@ -275,7 +275,6 @@ int main(void)
 	}
 	case READY:
 	{
-		BLUE_BUTTON_WAIT();
 		if (LOW_POWER_MODE)
 			enter_sleep_mode();
 		break;
@@ -381,7 +380,7 @@ static void MX_DFSDM1_Init(void)
   hdfsdm1_channel5.Instance = DFSDM1_Channel5;
   hdfsdm1_channel5.Init.OutputClock.Activation = ENABLE;
   hdfsdm1_channel5.Init.OutputClock.Selection = DFSDM_CHANNEL_OUTPUT_CLOCK_SYSTEM;
-  hdfsdm1_channel5.Init.OutputClock.Divider = 68;
+  hdfsdm1_channel5.Init.OutputClock.Divider = 67;
   hdfsdm1_channel5.Init.Input.Multiplexer = DFSDM_CHANNEL_EXTERNAL_INPUTS;
   hdfsdm1_channel5.Init.Input.DataPacking = DFSDM_CHANNEL_STANDARD_MODE;
   hdfsdm1_channel5.Init.Input.Pins = DFSDM_CHANNEL_SAME_CHANNEL_PINS;
@@ -559,43 +558,31 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BLUE_BUTTON_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
 }
+
 /* USER CODE BEGIN 4 */
-//void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
-//{
-//	switch(GPIO_Pin) {
-//	case BLUE_BUTTON_Pin:
-//		switch(main_state) {
-//		case READY:
-//			main_state = RECORDING;
-//			break;
-//		case RECORDING:
-////			dfsdm_stop_flag = 1;
-//			audio_recorder->dfsdm_stop_flag = 1;
-//			break;
-//		case SETUP:
-//		case MFCC_TEST:
-//		case AUDIO_TEST:
-//		case NN:
-//			break;
-//		}
-//		break;
-//	}
-//}
-void BLUE_BUTTON_WAIT()
+void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
-	while(HAL_GPIO_ReadPin(BLUE_BUTTON_GPIO_Port, BLUE_BUTTON_Pin)==GPIO_PIN_RESET);
-	switch(main_state) {
-	case READY:
-		main_state = RECORDING;
-		break;
-	case RECORDING:
-		audio_recorder->dfsdm_stop_flag = 1;
-		break;
-	case SETUP:
-	case MFCC_TEST:
-	case AUDIO_TEST:
-	case NN:
+	switch(GPIO_Pin) {
+	case BLUE_BUTTON_Pin:
+		switch(main_state) {
+		case READY:
+			main_state = RECORDING;
+			break;
+		case RECORDING:
+			audio_recorder->dfsdm_stop_flag = 1;
+			break;
+		case SETUP:
+		case MFCC_TEST:
+		case AUDIO_TEST:
+		case NN:
+			break;
+		}
 		break;
 	}
 }
