@@ -1,0 +1,124 @@
+18:14:45 **** Incremental Build of configuration Debug for project stm32l475-cpp-digit-kws-cnn ****
+make -j4 all 
+arm-none-eabi-g++ "../Core/Src/main.cpp" -mcpu=cortex-m4 -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L475xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/ST/AI/Inc -I../X-CUBE-AI/App -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.cpp: In function 'int main()':
+../Core/Src/main.cpp:316:57: warning: format '%d' expects argument of type 'int', but argument 4 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
+  316 |        sprintf(uart_buffer, "Prediction: \"%s\" score: %d\r\n", output_class[pred_index], (uint32_t)nn_out[pred_index]);
+      |                                                        ~^                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                         |                                 |
+      |                                                         int                               uint32_t {aka long unsigned int}
+      |                                                        %ld
+../Core/Src/main.cpp:328:54: warning: format '%d' expects argument of type 'int', but argument 4 has type 'double' [-Wformat=]
+  328 |        sprintf(uart_buffer, "Average: \"%s\" score: %d\r\n", output_class[pred_index], average[pred_index]);
+      |                                                     ~^                                 ~~~~~~~~~~~~~~~~~~~
+      |                                                      |                                                   |
+      |                                                      int                                                 double
+      |                                                     %f
+../Core/Src/main.cpp:306:14: warning: variable 'tmp' set but not used [-Wunused-but-set-variable]
+  306 |     ai_float tmp [NUM_OUTPUT_CLASSES];
+      |              ^~~
+../Core/Src/main.cpp:166:10: warning: enumeration value 'MFCC_TEST' not handled in switch [-Wswitch]
+  166 |    switch(main_state) {
+      |          ^
+arm-none-eabi-g++ -o "stm32l475-cpp-digit-kws-cnn.elf" @"objects.list"  -l:NetworkRuntime710_CM4_GCC.a -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\Lenovo\git\CapstoneGroup4\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld" -Wl,-Map="stm32l475-cpp-digit-kws-cnn.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: stm32l475-cpp-digit-kws-cnn.elf
+ 
+arm-none-eabi-size   stm32l475-cpp-digit-kws-cnn.elf 
+arm-none-eabi-objdump -h -S  stm32l475-cpp-digit-kws-cnn.elf  > "stm32l475-cpp-digit-kws-cnn.list"
+arm-none-eabi-objcopy  -O binary  stm32l475-cpp-digit-kws-cnn.elf  "stm32l475-cpp-digit-kws-cnn.bin"
+   text	   data	    bss	    dec	    hex	filename
+ 425032	   3220	   5260	 433512	  69d68	stm32l475-cpp-digit-kws-cnn.elf
+Finished building: default.size.stdout
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.bin
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.list
+ 
+18:14:52 **** Incremental Build of configuration Debug for project stm32l475-cpp-digit-kws-cnn ****
+make -j4 all 
+arm-none-eabi-size   stm32l475-cpp-digit-kws-cnn.elf 
+   text	   data	    bss	    dec	    hex	filename
+ 425032	   3220	   5260	 433512	  69d68	stm32l475-cpp-digit-kws-cnn.elf
+Finished building: default.size.stdout
+ 
+18:17:03 **** Incremental Build of configuration Debug for project stm32l475-cpp-digit-kws-cnn ****
+make -j4 all 
+arm-none-eabi-g++ "../Core/Src/main.cpp" -mcpu=cortex-m4 -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L475xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/ST/AI/Inc -I../X-CUBE-AI/App -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.cpp: In function 'int main()':
+../Core/Src/main.cpp:328:54: warning: format '%d' expects argument of type 'int', but argument 4 has type 'double' [-Wformat=]
+  328 |        sprintf(uart_buffer, "Average: \"%s\" score: %d\r\n", output_class[pred_index], average[pred_index]);
+      |                                                     ~^                                 ~~~~~~~~~~~~~~~~~~~
+      |                                                      |                                                   |
+      |                                                      int                                                 double
+      |                                                     %f
+../Core/Src/main.cpp:306:14: warning: variable 'tmp' set but not used [-Wunused-but-set-variable]
+  306 |     ai_float tmp [NUM_OUTPUT_CLASSES];
+      |              ^~~
+../Core/Src/main.cpp:166:10: warning: enumeration value 'MFCC_TEST' not handled in switch [-Wswitch]
+  166 |    switch(main_state) {
+      |          ^
+arm-none-eabi-g++ -o "stm32l475-cpp-digit-kws-cnn.elf" @"objects.list"  -l:NetworkRuntime710_CM4_GCC.a -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\Lenovo\git\CapstoneGroup4\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld" -Wl,-Map="stm32l475-cpp-digit-kws-cnn.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: stm32l475-cpp-digit-kws-cnn.elf
+ 
+arm-none-eabi-size   stm32l475-cpp-digit-kws-cnn.elf 
+arm-none-eabi-objdump -h -S  stm32l475-cpp-digit-kws-cnn.elf  > "stm32l475-cpp-digit-kws-cnn.list"
+arm-none-eabi-objcopy  -O binary  stm32l475-cpp-digit-kws-cnn.elf  "stm32l475-cpp-digit-kws-cnn.bin"
+   text	   data	    bss	    dec	    hex	filename
+ 425032	   3220	   5260	 433512	  69d68	stm32l475-cpp-digit-kws-cnn.elf
+Finished building: default.size.stdout
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.bin
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.list
+ 
+18:18:29 **** Incremental Build of configuration Debug for project stm32l475-cpp-digit-kws-cnn ****
+make -j4 all 
+arm-none-eabi-g++ "../Core/Src/main.cpp" -mcpu=cortex-m4 -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L475xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/ST/AI/Inc -I../X-CUBE-AI/App -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.cpp: In function 'int main()':
+../Core/Src/main.cpp:306:14: warning: variable 'tmp' set but not used [-Wunused-but-set-variable]
+  306 |     ai_float tmp [NUM_OUTPUT_CLASSES];
+      |              ^~~
+../Core/Src/main.cpp:166:10: warning: enumeration value 'MFCC_TEST' not handled in switch [-Wswitch]
+  166 |    switch(main_state) {
+      |          ^
+arm-none-eabi-g++ -o "stm32l475-cpp-digit-kws-cnn.elf" @"objects.list"  -l:NetworkRuntime710_CM4_GCC.a -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\Lenovo\git\CapstoneGroup4\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld" -Wl,-Map="stm32l475-cpp-digit-kws-cnn.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: stm32l475-cpp-digit-kws-cnn.elf
+ 
+arm-none-eabi-size   stm32l475-cpp-digit-kws-cnn.elf 
+arm-none-eabi-objdump -h -S  stm32l475-cpp-digit-kws-cnn.elf  > "stm32l475-cpp-digit-kws-cnn.list"
+arm-none-eabi-objcopy  -O binary  stm32l475-cpp-digit-kws-cnn.elf  "stm32l475-cpp-digit-kws-cnn.bin"
+   text	   data	    bss	    dec	    hex	filename
+ 425032	   3220	   5260	 433512	  69d68	stm32l475-cpp-digit-kws-cnn.elf
+Finished building: default.size.stdout
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.bin
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.list
+ 
+18:21:28 **** Incremental Build of configuration Debug for project stm32l475-cpp-digit-kws-cnn ****
+make -j4 all 
+arm-none-eabi-g++ "../Core/Src/main.cpp" -mcpu=cortex-m4 -std=gnu++14 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L475xx -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Middlewares/ST/AI/Inc -I../X-CUBE-AI/App -O0 -ffunction-sections -fdata-sections -fno-exceptions -fno-rtti -fno-use-cxa-atexit -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.cpp: In function 'int main()':
+../Core/Src/main.cpp:306:14: warning: variable 'tmp_out_data' set but not used [-Wunused-but-set-variable]
+  306 |     ai_float tmp_out_data [NUM_OUTPUT_CLASSES];
+      |              ^~~~~~~~~~~~
+../Core/Src/main.cpp:307:14: warning: variable 'tmp_nn_out' set but not used [-Wunused-but-set-variable]
+  307 |     ai_float tmp_nn_out [NUM_OUTPUT_CLASSES];
+      |              ^~~~~~~~~~
+../Core/Src/main.cpp:166:10: warning: enumeration value 'MFCC_TEST' not handled in switch [-Wswitch]
+  166 |    switch(main_state) {
+      |          ^
+arm-none-eabi-g++ -o "stm32l475-cpp-digit-kws-cnn.elf" @"objects.list"  -l:NetworkRuntime710_CM4_GCC.a -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\Lenovo\git\CapstoneGroup4\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld" -Wl,-Map="stm32l475-cpp-digit-kws-cnn.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+Finished building target: stm32l475-cpp-digit-kws-cnn.elf
+ 
+arm-none-eabi-size   stm32l475-cpp-digit-kws-cnn.elf 
+arm-none-eabi-objdump -h -S  stm32l475-cpp-digit-kws-cnn.elf  > "stm32l475-cpp-digit-kws-cnn.list"
+arm-none-eabi-objcopy  -O binary  stm32l475-cpp-digit-kws-cnn.elf  "stm32l475-cpp-digit-kws-cnn.bin"
+   text	   data	    bss	    dec	    hex	filename
+ 425072	   3220	   5260	 433552	  69d90	stm32l475-cpp-digit-kws-cnn.elf
+Finished building: default.size.stdout
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.bin
+ 
+Finished building: stm32l475-cpp-digit-kws-cnn.list
+ 

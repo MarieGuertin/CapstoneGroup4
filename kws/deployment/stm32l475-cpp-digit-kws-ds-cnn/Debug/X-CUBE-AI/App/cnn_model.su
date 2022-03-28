@@ -1,0 +1,13 @@
+cnn_model.c:557:9:cnn_model_configure_activations	24	static
+cnn_model.c:593:9:cnn_model_configure_weights	24	static
+cnn_model.c:656:9:ai_cnn_model_get_info	144	static
+cnn_model.c:702:9:ai_cnn_model_get_report	144	static
+cnn_model.c:748:10:ai_cnn_model_get_error	16	static
+cnn_model.c:754:10:ai_cnn_model_create	24	static
+cnn_model.c:764:10:ai_cnn_model_create_and_init	96	static
+cnn_model.c:798:12:ai_cnn_model_inputs_get	16	static
+cnn_model.c:808:12:ai_cnn_model_outputs_get	16	static
+cnn_model.c:818:11:ai_cnn_model_destroy	16	static
+cnn_model.c:824:9:ai_cnn_model_init	24	static
+cnn_model.c:841:8:ai_cnn_model_run	24	static
+cnn_model.c:848:8:ai_cnn_model_forward	16	static
