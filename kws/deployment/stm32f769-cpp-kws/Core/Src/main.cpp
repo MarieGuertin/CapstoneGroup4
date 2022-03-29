@@ -28,6 +28,7 @@
 #include "audio_player.h"
 #include "arm_math.h"
 #include "ML-KWS-for-MCU/NN/DS_CNN/ds_cnn.h"
+#include "ML-KWS-for-MCU/NN/DNN/dnn.h"
 #include "ML-KWS-for-MCU/MFCC/mfcc.h"
 #include "kws.h"
 #include <stdlib.h>
@@ -145,7 +146,7 @@ int main(void)
   qspi_init();
   main_state = SETUP;
 
-  char output_class[12][8] = {"Silence", "Unknown","yes","no","up","down","left","right","on","off","stop","go"};
+  char output_class[12][8] = {"silence", "unknown","yes","no","up","down","left","right","on","off","stop","go"};
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -203,7 +204,9 @@ int main(void)
 		uint32_t pred_index;
 
 		q7_t *mfcc_head;
-		DS_CNN *ds_cnn = new DS_CNN();
+//		DS_CNN *model = new DS_CNN();
+		DNN *model = new DNN();
+
 		MFCC *mfcc = new MFCC(NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
 
 		bool keyword_detected = false;
@@ -219,7 +222,7 @@ int main(void)
 					mfcc_head += NUM_MFCC_COEFFS;
 				}
 				q7_t* nn_out = predictions + (i * NUM_OUTPUT_CLASSES);
-				ds_cnn->run_nn(mfcc_out, nn_out);
+				model->run_nn(mfcc_out, nn_out);
 //				arm_softmax_q7(nn_out,NUM_OUTPUT_CLASSES,nn_out);
 
 				// get prediction for each recording window
@@ -241,7 +244,7 @@ int main(void)
 					print(uart_buffer);
 				}
 
-				if (average[pred_index] / 128.0 * 100 > DETECTION_THRESHOLD) {
+				if (pred_index != SILENCE_INDEX && pred_index != UNKNOWN_INDEX && average[pred_index] / 128.0 * 100 > DETECTION_THRESHOLD) {
 					sprintf(uart_buffer, "Keyword Detected: \"%s\"\r\n", output_class[pred_index]);
 					print(uart_buffer);
 					keyword_detected = true;
@@ -255,8 +258,10 @@ int main(void)
 
 		mfcc->~MFCC();
 		delete mfcc;
-		ds_cnn->~DS_CNN();
-		delete ds_cnn;
+
+//		model->~DS_CNN();
+		model->~DNN();
+
 		delete [] mfcc_out;
 		delete [] predictions;
 		delete [] average;

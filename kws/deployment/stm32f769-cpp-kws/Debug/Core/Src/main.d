@@ -47,6 +47,8 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
  ../Core/Inc/ML-KWS-for-MCU/local_NN/local_NN.h \
  ../Drivers/CMSIS/NN/Include/arm_nnsupportfunctions.h \
  ../Drivers/CMSIS/NN/Include/arm_nn_tables.h \
+ ../Core/Inc/ML-KWS-for-MCU/NN/DNN/dnn.h \
+ ../Core/Inc/ML-KWS-for-MCU/NN/DNN/dnn_weights.h \
  ../Core/Inc/ML-KWS-for-MCU/MFCC/mfcc.h ../Core/Inc/kws.h
 
 ../Core/Inc/main.h:
@@ -152,6 +154,10 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
 ../Drivers/CMSIS/NN/Include/arm_nnsupportfunctions.h:
 
 ../Drivers/CMSIS/NN/Include/arm_nn_tables.h:
+
+../Core/Inc/ML-KWS-for-MCU/NN/DNN/dnn.h:
+
+../Core/Inc/ML-KWS-for-MCU/NN/DNN/dnn_weights.h:
 
 ../Core/Inc/ML-KWS-for-MCU/MFCC/mfcc.h:
 
