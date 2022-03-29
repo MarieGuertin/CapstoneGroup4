@@ -203,13 +203,13 @@ int main(void)
   		int16_t *audio_buffer = new int16_t[(RECORDING_WINDOW_LENGTH+1)*FRAME_SHIFT];
 
   		// mfcc coefficients
-  		ai_float *mfcc_out = new ai_float[NUM_FRAMES * NUM_MFCC_COEFFS];
+  		ai_float *mfcc_out = (ai_float*)calloc(NUM_FRAMES * NUM_MFCC_COEFFS,sizeof(ai_float));
 
   		// output buffer
-  		ai_float *predictions = new ai_float[NUM_PREDICTIONS * NUM_OUTPUT_CLASSES];
+  		ai_float *predictions = (ai_float*)calloc(NUM_PREDICTIONS * NUM_OUTPUT_CLASSES,sizeof(ai_float));
 
   		// average predictions
-  		ai_float *average = new ai_float[NUM_OUTPUT_CLASSES];
+  		ai_float *average = (ai_float*)calloc(NUM_OUTPUT_CLASSES,sizeof(ai_float));
 
   		uint32_t pred_index;
 
@@ -295,6 +295,8 @@ int main(void)
 					uint32_t col_index = i % NUM_MFCC_COEFFS;
 
 					((ai_float*)in_data)[i] = mfcc_out[row_index*NUM_MFCC_COEFFS+col_index];
+//					((ai_float*)in_data)[i] = ((mfcc_out[row_index*NUM_MFCC_COEFFS+col_index] - (-128))*(8388607-(-8388608)))/(127-(-128))+(-8388608);
+
 				}
 
 //				print("\n");
@@ -332,7 +334,7 @@ int main(void)
   					print(uart_buffer);
   				}
 
-  				if (average[pred_index] / 128.0 * 100 > DETECTION_THRESHOLD) {
+  				if (pred_index != SILENCE_INDEX && pred_index != UNKNOWN_INDEX && average[pred_index] / 128.0 * 100 > DETECTION_THRESHOLD) {
   					sprintf(uart_buffer, "Keyword Detected: \"%s\"\r\n", output_class[pred_index]);
   					print(uart_buffer);
   					keyword_detected = true;
@@ -358,9 +360,9 @@ int main(void)
   		delete [] in_data;
   		delete [] out_data;
 
-//		if(ai_cnn_model_destroy(cnn_model) != AI_HANDLE_NULL){
-//			Error_Handler();
-//		};
+		if(ai_cnn_model_destroy(cnn_model) != AI_HANDLE_NULL){
+			Error_Handler();
+		};
 
 
   		main_state = SETUP;

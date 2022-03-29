@@ -12,7 +12,7 @@
 #include "arm_math.h"
 
 #define SAMP_FREQ 16000
-#define MFCC_DEC_BITS 2
+#define MFCC_DEC_BITS 1
 #define FRAME_SHIFT_MS 20
 #define FRAME_SHIFT ((int16_t)(SAMP_FREQ * 0.001 * FRAME_SHIFT_MS))
 #define NUM_FRAMES 49
@@ -24,6 +24,8 @@
 #define NUM_OUTPUT_CLASSES ((uint32_t) 12)
 #define NUM_PREDICTIONS ((uint32_t) (NUM_FRAMES / RECORDING_WINDOW_LENGTH))
 #define SILENCE_INDEX ((uint32_t) 0)
+#define UNKNOWN_INDEX ((uint32_t) 1)
+
 
 // TODO: tweak these parameters to find optimal combination
 #define RECORDING_WINDOW_LENGTH ((uint32_t)5)
