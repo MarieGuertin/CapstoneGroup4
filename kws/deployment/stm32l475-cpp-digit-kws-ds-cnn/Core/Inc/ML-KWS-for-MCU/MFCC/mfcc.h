@@ -58,7 +58,7 @@ class MFCC{
   public:
     MFCC(int num_mfcc_features, int frame_len, int mfcc_dec_bits);
     ~MFCC();
-    void mfcc_compute(const int16_t* data, q7_t* mfcc_out);
+    void mfcc_compute(const int16_t* data, float* mfcc_out);
 };
 
 #endif

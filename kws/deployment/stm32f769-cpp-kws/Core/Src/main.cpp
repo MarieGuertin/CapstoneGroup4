@@ -180,6 +180,7 @@ int main(void)
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
 //		main_state = NN;
 		audio_recorder->~AudioRecorder();
+		delete audio_recorder;
 		main_state = AUDIO_TEST;
 		break;
 	}
@@ -253,7 +254,9 @@ int main(void)
 		}
 
 		mfcc->~MFCC();
+		delete mfcc;
 		ds_cnn->~DS_CNN();
+		delete ds_cnn;
 		delete [] mfcc_out;
 		delete [] predictions;
 		delete [] average;
@@ -270,6 +273,7 @@ int main(void)
 		main_state = NN;
 //		main_state = SETUP;
 		audio_player->~AudioPlayer();
+		delete audio_player;
 
 		break;
 	}

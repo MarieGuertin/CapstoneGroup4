@@ -13,7 +13,7 @@
 #include "audio_recorder.h"
 
 #define PLAY_SAMPLING_RATE ((uint32_t ) 16000) //Hz
-#define PLAY_BUFFER_LENGTH ((uint32_t)8000)
+#define PLAY_BUFFER_LENGTH ((uint32_t)16000)
 #define PLAY_HALF_BUFFER_LENGTH ((uint32_t) PLAY_BUFFER_LENGTH / 2)
 
 // DAC Parameters

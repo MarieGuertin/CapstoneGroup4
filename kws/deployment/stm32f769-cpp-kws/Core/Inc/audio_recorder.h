@@ -12,12 +12,12 @@
 #include "main.h"
 
 #define RECORD_SAMPLING_RATE ((uint32_t ) 16000) //Hz
-#define RECORD_BUFFER_LENGTH ((uint32_t)8000)
+#define RECORD_BUFFER_LENGTH ((uint32_t)16000)
 #define RECORD_HALF_BUFFER_LENGTH ((uint32_t) RECORD_BUFFER_LENGTH / 2)
-#define PRINT_BUFFER_LENGTH ((uint32_t)8000)
+#define PRINT_BUFFER_LENGTH ((uint32_t)16000)
 #define DFSDM_DATA_WIDTH ((uint32_t) 4)
 
-#define MAX_RECORD_LENGTH_S ((uint32_t) 1)
+#define MAX_RECORD_LENGTH_S ((uint32_t) 5)
 #define MAX_RECORD_LENGTH ((uint32_t) RECORD_SAMPLING_RATE * MAX_RECORD_LENGTH_S)
 
 #define WAVE_DATA_QSPI_ADDRESS (0xA0000)

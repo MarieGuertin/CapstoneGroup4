@@ -141,7 +141,7 @@ float ** MFCC::create_mel_fbank() {
   return mel_fbank;
 }
 
-void MFCC::mfcc_compute(const int16_t * audio_data, q7_t* mfcc_out) {
+void MFCC::mfcc_compute(const int16_t * audio_data, float* mfcc_out) {
 
   int32_t i, j, bin;
 
@@ -191,7 +191,7 @@ void MFCC::mfcc_compute(const int16_t * audio_data, q7_t* mfcc_out) {
 
   //Take log
   for (bin = 0; bin < NUM_FBANK_BINS; bin++)
-    mel_energies[bin] = logf(mel_energies[bin]);
+    mel_energies[bin] = (mel_energies[bin]);
 
   //Take DCT. Uses matrix mul.
   for (i = 0; i < num_mfcc_features; i++) {

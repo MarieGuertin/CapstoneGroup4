@@ -32,6 +32,7 @@ CPP_DEPS :=
 SUBDIRS := \
 Core/Src/ML-KWS-for-MCU/MFCC \
 Core/Src \
+Core/Src/libmfcc \
 Core/Startup \
 Drivers/STM32L4xx_HAL_Driver/Src \
 X-CUBE-AI/App \

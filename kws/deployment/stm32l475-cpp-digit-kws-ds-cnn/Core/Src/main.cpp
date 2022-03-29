@@ -28,6 +28,7 @@
 #include "audio_player.h"
 #include "arm_math.h"
 #include "ML-KWS-for-MCU/MFCC/mfcc.h"
+#include "libmfcc/libmfcc.h"
 #include "kws.h"
 #include <stdlib.h>
 #include <math.h>
@@ -188,9 +189,10 @@ int main(void)
 
   		ITM_Port32(31) = 4;
   		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
-  //		main_state = NN;
+  		main_state = NN;
   		audio_recorder->~AudioRecorder();
-  		main_state = AUDIO_TEST;
+  		delete audio_recorder;
+//  		main_state = AUDIO_TEST;
   		break;
   	}
   	case NN:
@@ -201,18 +203,18 @@ int main(void)
   		int16_t *audio_buffer = new int16_t[(RECORDING_WINDOW_LENGTH+1)*FRAME_SHIFT];
 
   		// mfcc coefficients
-  		q7_t *mfcc_out = (q7_t*) calloc(NUM_FRAMES * NUM_MFCC_COEFFS, sizeof(q7_t));
+  		ai_float *mfcc_out = new ai_float[NUM_FRAMES * NUM_MFCC_COEFFS];
 
   		// output buffer
-  		ai_float *predictions = (ai_float*) calloc(NUM_PREDICTIONS * NUM_OUTPUT_CLASSES, sizeof(ai_float));
+  		ai_float *predictions = new ai_float[NUM_PREDICTIONS * NUM_OUTPUT_CLASSES];
 
   		// average predictions
   		ai_float *average = new ai_float[NUM_OUTPUT_CLASSES];
 
   		uint32_t pred_index;
 
-  		q7_t *mfcc_head;
-  		//DS_CNN *ds_cnn = new DS_CNN();
+  		ai_float *mfcc_head;
+
   		MFCC *mfcc = new MFCC(NUM_MFCC_COEFFS, FRAME_LEN, MFCC_DEC_BITS);
 
   		///////////////////////////////////
@@ -225,25 +227,22 @@ int main(void)
 		ai_i32 nbatch;
 
 		// Chunk of memory used to hold intermediate values for the NN
-		AI_ALIGNED(4) ai_u8 activations[AI_CNN_MODEL_DATA_ACTIVATIONS_SIZE];//[AI_CNN_MODEL_DATA_ACTIVATIONS_SIZE];
+		AI_ALIGNED(4) ai_u8* activations = new ai_u8[AI_CNN_MODEL_DATA_ACTIVATIONS_SIZE];//[AI_CNN_MODEL_DATA_ACTIVATIONS_SIZE];
 
 		// Buffers used to store input and output tensors
-		AI_ALIGNED(4) ai_i8 in_data[AI_CNN_MODEL_IN_1_SIZE_BYTES];
-		AI_ALIGNED(4) ai_i8 out_data[AI_CNN_MODEL_OUT_1_SIZE_BYTES];
+		AI_ALIGNED(4) ai_i8* in_data = new ai_i8[AI_CNN_MODEL_IN_1_SIZE_BYTES];
+		AI_ALIGNED(4) ai_i8* out_data = new ai_i8[AI_CNN_MODEL_OUT_1_SIZE_BYTES];
 
 		// Pointer to our model
 		ai_handle cnn_model = AI_HANDLE_NULL;
 
 		// Initialize wrapper structs that hold pointers to data and info about
-		// data (tensor height, width, channels)
-		//ai_buffer ai_input = AI_BUFFER_OBJ_INIT(AI_BUFFER_FORMAT_FLOAT, 49, 10, 1, 1, NULL);
-		//ai_buffer ai_output = AI_BUFFER_OBJ_INIT(AI_BUFFER_FORMAT_FLOAT, 1, 1, 12, 1, NULL);
-
-		ai_buffer ai_input[AI_CNN_MODEL_IN_NUM];
-		ai_buffer ai_output[AI_CNN_MODEL_OUT_NUM];
+		ai_buffer* ai_input = new ai_buffer[AI_CNN_MODEL_IN_NUM];
+		ai_buffer* ai_output = new ai_buffer[AI_CNN_MODEL_OUT_NUM];
 
 		ai_input[0] = *AI_CNN_MODEL_IN;
 		ai_output[0] = *AI_CNN_MODEL_OUT;
+
 
 		// Set working memory and get weights/biases from model
 		ai_network_params ai_params = AI_NETWORK_PARAMS_INIT(
@@ -251,10 +250,10 @@ int main(void)
 				AI_CNN_MODEL_DATA_ACTIVATIONS(activations)
 		);
 
+
 		// Set pointers wrapper structs to our data buffers
 		//ai_input[0].n_batches = 1;
 		ai_input[0].data = AI_HANDLE_PTR(in_data);
-		//ai_output[0].n_batches = 1;
 		ai_output[0].data = AI_HANDLE_PTR(out_data);
 
 		//ITM_Port32(31) = 7;
@@ -280,42 +279,44 @@ int main(void)
   		for (uint32_t i = 0; i < NUM_PREDICTIONS; i ++) {
   				qspi_read((uint8_t*)audio_buffer, WAVE_DATA_QSPI_ADDRESS + (i * RECORDING_WINDOW_LENGTH * FRAME_SHIFT * WAVE_DATA_WIDTH), RECORDING_WINDOW_SIZE);
   				// move old data to the left
-  				arm_copy_q7(mfcc_out + (RECORDING_WINDOW_LENGTH * NUM_MFCC_COEFFS), mfcc_out, (NUM_FRAMES - RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS * sizeof(q7_t));
+  				arm_copy_f32(&mfcc_out[RECORDING_WINDOW_LENGTH * NUM_MFCC_COEFFS], mfcc_out, (NUM_FRAMES - RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS);
   				mfcc_head = mfcc_out + ((NUM_FRAMES-RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS);
+
   				for (uint32_t j = 0; j < RECORDING_WINDOW_LENGTH; j ++) {
   					mfcc->mfcc_compute(audio_buffer + (j * FRAME_SHIFT), mfcc_head);
   					mfcc_head += NUM_MFCC_COEFFS;
   				}
 
-  				ai_float* nn_out = predictions + (i * NUM_OUTPUT_CLASSES);
+  				ai_float* nn_out = &predictions[i * NUM_OUTPUT_CLASSES];
 
   				// Fill input buffer
 				for (uint32_t i = 0; i < AI_CNN_MODEL_IN_1_SIZE; i++) {
 					uint32_t row_index = (uint32_t) (i / NUM_MFCC_COEFFS);
 					uint32_t col_index = i % NUM_MFCC_COEFFS;
-					((ai_float*)in_data)[i] =  (ai_float)mfcc_out[row_index*10+col_index];
+
+					((ai_float*)in_data)[i] = mfcc_out[row_index*NUM_MFCC_COEFFS+col_index];
 				}
 
+//				print("\n");
+//				print_mfcc(((ai_float*)in_data));
+//				print("\n");
+
 				// forward MFCC matrix to the NN
-				nbatch = ai_cnn_model_run(cnn_model, &ai_input[0], &ai_output[0]);
+				nbatch = ai_cnn_model_run(cnn_model, ai_input, ai_output);
 				if (nbatch != 1) {
 					// could not run inference
 					Error_Handler();
 				}
-				//arm_softmax_q7 (nn_out,NUM_OUTPUT_CLASSES,nn_out);
-				ai_float tmp_out_data [NUM_OUTPUT_CLASSES];
-				ai_float tmp_nn_out [NUM_OUTPUT_CLASSES];
+
 				// extract output data
 				for (uint32_t i = 0; i < NUM_OUTPUT_CLASSES; i++) {
 					nn_out[i] = ((ai_float*)out_data)[i];
-					tmp_out_data[i] = ((ai_float*)out_data)[i];
-					tmp_nn_out[i] = nn_out[i];
 				}
 
   				// get prediction for each recording window
   				if (DEBUG_MODE) {
   					pred_index = get_top_class(nn_out);
-  					sprintf(uart_buffer, "Prediction: \"%s\" score: %d\r\n", output_class[pred_index], (uint8_t)nn_out[pred_index]);
+  					sprintf(uart_buffer, "Prediction: \"%s\" score: %d\r\n", output_class[pred_index], (int)nn_out[pred_index]);
   					print(uart_buffer);
   				}
 
@@ -327,7 +328,7 @@ int main(void)
   				pred_index = get_top_class(average);
 
   				if (DEBUG_MODE) {
-  					sprintf(uart_buffer, "Average: \"%s\" score: %d\r\n", output_class[pred_index], (uint8_t)average[pred_index]);
+  					sprintf(uart_buffer, "Average: \"%s\" score: %d\r\n", output_class[pred_index], (int)average[pred_index]);
   					print(uart_buffer);
   				}
 
@@ -344,16 +345,24 @@ int main(void)
   		}
 
   		mfcc->~MFCC();
+  		delete mfcc;
+
+  		// free allocated memory
   		delete [] mfcc_out;
   		delete [] predictions;
   		delete [] average;
   		delete [] audio_buffer;
-  		// free allocated memory
-  		//delete activations;
-  		//delete in_data;
-  		//delete out_data;
-		// destroy model and free allocated memory
-		ai_cnn_model_destroy(cnn_model);
+  		delete [] activations;
+  		delete [] ai_input;
+  		delete [] ai_output;
+  		delete [] in_data;
+  		delete [] out_data;
+
+//		if(ai_cnn_model_destroy(cnn_model) != AI_HANDLE_NULL){
+//			Error_Handler();
+//		};
+
+
   		main_state = SETUP;
   		break;
   	}
@@ -366,7 +375,7 @@ int main(void)
   		main_state = NN;
   //		main_state = SETUP;
   		audio_player->~AudioPlayer();
-
+  		delete audio_player;
   		break;
   	}
   	case READY:

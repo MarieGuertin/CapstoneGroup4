@@ -28,7 +28,7 @@ uint32_t get_top_class(float* nn_output) {
 }
 
 void average_predictions(float *average_out, float* average_window_head, uint32_t num_predictions, uint32_t num_output_classes) {
-	float *sum = new float[num_output_classes];
+	float sum[num_output_classes];
 	for (uint32_t i = 0; i < num_output_classes; i++) {
 		sum[i] = 0;
 		for (uint32_t j = 0; j < num_predictions; j++) {
@@ -36,19 +36,19 @@ void average_predictions(float *average_out, float* average_window_head, uint32_
 		}
 		average_out[i] = sum[i] / (float) num_predictions;
 	}
-	delete [] sum;
 }
 
-void print_mfcc(q7_t *mfcc_out) {
+void print_mfcc(float *mfcc_out) {
 	print("\nMFCC:\r\n");
 	for (uint32_t i=0; i < MFCC_BUFFER_SIZE; i++) {
 		char mfcc_coeff_str[10];
-		sprintf(mfcc_coeff_str, "%d", (int8_t)(mfcc_out[i]));
+		sprintf(mfcc_coeff_str, "%d", (int32_t)(mfcc_out[i]));
 		print(mfcc_coeff_str);
-		if ((i+1) % NUM_MFCC_COEFFS == 0)
-			print("\r\n");
-		else
-			print(",");
+		print(",");
+//		if ((i+1) % NUM_MFCC_COEFFS == 0)
+//			print("\r\n");
+//		else
+//			print(",");
 	}
 	print("\r\n");
 }

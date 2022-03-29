@@ -12,6 +12,7 @@ RM := rm -rf
 -include X-CUBE-AI/App/subdir.mk
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
+-include Core/Src/libmfcc/subdir.mk
 -include Core/Src/ML-KWS-for-MCU/MFCC/subdir.mk
 -include Core/Src/subdir.mk
 -include subdir.mk
@@ -52,34 +53,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := stm32l475-cpp-digit-kws-cnn
+BUILD_ARTIFACT_NAME := stm32l475-cpp-digit-kws-ds-cnn
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-stm32l475-cpp-digit-kws-cnn.elf \
+stm32l475-cpp-digit-kws-ds-cnn.elf \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-stm32l475-cpp-digit-kws-cnn.list \
+stm32l475-cpp-digit-kws-ds-cnn.list \
 
 OBJCOPY_BIN += \
-stm32l475-cpp-digit-kws-cnn.bin \
+stm32l475-cpp-digit-kws-ds-cnn.bin \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: stm32l475-cpp-digit-kws-cnn.elf secondary-outputs
+main-build: stm32l475-cpp-digit-kws-ds-cnn.elf secondary-outputs
 
 # Tool invocations
-stm32l475-cpp-digit-kws-cnn.elf: $(OBJS) $(USER_OBJS) C:\Users\Lenovo\git\CapstoneGroup4\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "stm32l475-cpp-digit-kws-cnn.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Lenovo\git\CapstoneGroup4\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld" -Wl,-Map="stm32l475-cpp-digit-kws-cnn.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+stm32l475-cpp-digit-kws-ds-cnn.elf: $(OBJS) $(USER_OBJS) C:\Users\Windows\STM32CubeIDE\workspace_1.7.0\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "stm32l475-cpp-digit-kws-ds-cnn.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Windows\STM32CubeIDE\workspace_1.7.0\stm32l475-cpp-digit-kws-ds-cnn\STM32L475VGTX_FLASH.ld" -Wl,-Map="stm32l475-cpp-digit-kws-ds-cnn.map" -Wl,--gc-sections -static -L../Middlewares/ST/AI/Lib -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -88,19 +89,19 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-stm32l475-cpp-digit-kws-cnn.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "stm32l475-cpp-digit-kws-cnn.list"
+stm32l475-cpp-digit-kws-ds-cnn.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "stm32l475-cpp-digit-kws-ds-cnn.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-stm32l475-cpp-digit-kws-cnn.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "stm32l475-cpp-digit-kws-cnn.bin"
+stm32l475-cpp-digit-kws-ds-cnn.bin: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "stm32l475-cpp-digit-kws-ds-cnn.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJDUMP_LIST)$(C_UPPER_DEPS)$(S_DEPS)$(C_DEPS)$(OBJCOPY_BIN)$(CC_DEPS)$(SIZE_OUTPUT)$(C++_DEPS)$(EXECUTABLES)$(OBJS)$(CXX_DEPS)$(S_UPPER_DEPS)$(CPP_DEPS) stm32l475-cpp-digit-kws-cnn.elf
+	-$(RM) $(OBJDUMP_LIST)$(C_UPPER_DEPS)$(S_DEPS)$(C_DEPS)$(OBJCOPY_BIN)$(CC_DEPS)$(SIZE_OUTPUT)$(C++_DEPS)$(EXECUTABLES)$(OBJS)$(CXX_DEPS)$(S_UPPER_DEPS)$(CPP_DEPS) stm32l475-cpp-digit-kws-ds-cnn.elf
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)

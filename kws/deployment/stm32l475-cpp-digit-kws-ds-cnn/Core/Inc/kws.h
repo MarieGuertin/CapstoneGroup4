@@ -12,7 +12,7 @@
 #include "arm_math.h"
 
 #define SAMP_FREQ 16000
-#define MFCC_DEC_BITS 1
+#define MFCC_DEC_BITS 2
 #define FRAME_SHIFT_MS 20
 #define FRAME_SHIFT ((int16_t)(SAMP_FREQ * 0.001 * FRAME_SHIFT_MS))
 #define NUM_FRAMES 49
@@ -31,7 +31,7 @@
 #define AVERAGE_WINDOW_LENGTH ((uint32_t) 3)
 
 void compute_mfcc_coefficients(q7_t *mfcc_out, uint32_t audio_start_address, uint32_t num_frames, uint32_t frame_len, uint32_t frame_shift, uint32_t mfcc_num_features, uint32_t mfcc_num_dec_bits);
-void print_mfcc(q7_t *mfcc_out);
+void print_mfcc(float *mfcc_out);
 void average_predictions(float *average, float* predictions, uint32_t num_predictions, uint32_t num_output_classes);
 uint32_t get_top_class(float* nn_output);
 

@@ -39,8 +39,9 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
  ../Core/Inc/audio_recorder.h ../Core/Inc/main.h \
  ../Core/Inc/audio_player.h ../Core/Inc/audio_recorder.h \
  ../Core/Inc/arm_math.h ../Drivers/CMSIS/Include/cmsis_compiler.h \
- ../Core/Inc/ML-KWS-for-MCU/MFCC/mfcc.h ../Core/Inc/kws.h \
- ../Core/Inc/arm_math.h ../Middlewares/ST/AI/Inc/ai_datatypes_defines.h \
+ ../Core/Inc/ML-KWS-for-MCU/MFCC/mfcc.h ../Core/Src/libmfcc/libmfcc.h \
+ ../Core/Inc/kws.h ../Core/Inc/arm_math.h \
+ ../Middlewares/ST/AI/Inc/ai_datatypes_defines.h \
  ../Middlewares/ST/AI/Inc/ai_platform.h ../X-CUBE-AI/App/cnn_model_data.h \
  ../X-CUBE-AI/App/cnn_model_config.h ../X-CUBE-AI/App/cnn_model.h
 
@@ -137,6 +138,8 @@ Core/Src/main.o: ../Core/Src/main.cpp ../Core/Inc/main.h \
 ../Drivers/CMSIS/Include/cmsis_compiler.h:
 
 ../Core/Inc/ML-KWS-for-MCU/MFCC/mfcc.h:
+
+../Core/Src/libmfcc/libmfcc.h:
 
 ../Core/Inc/kws.h:
 

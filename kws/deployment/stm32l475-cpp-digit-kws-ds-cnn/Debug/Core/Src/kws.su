@@ -1,3 +1,3 @@
 kws.cpp:18:10:uint32_t get_top_class(float*)	32	static
-kws.cpp:30:6:void average_predictions(float*, float*, uint32_t, uint32_t)	40	static
-kws.cpp:42:6:void print_mfcc(q7_t*)	32	static
+kws.cpp:30:6:void average_predictions(float*, float*, uint32_t, uint32_t)	48	dynamic
+kws.cpp:41:6:void print_mfcc(float*)	32	static

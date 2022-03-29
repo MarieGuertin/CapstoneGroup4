@@ -191,6 +191,7 @@ int main(void)
 		HAL_GPIO_WritePin(GREEN_LED_GPIO_Port, GREEN_LED_Pin, GPIO_PIN_RESET);
 //		main_state = NN;
 		audio_recorder->~AudioRecorder();
+		delete audio_recorder;
 		main_state = AUDIO_TEST;
 		break;
 	}
@@ -222,7 +223,7 @@ int main(void)
 		for (uint32_t i = 0; i < NUM_PREDICTIONS; i ++) {
 				qspi_read((uint8_t*)audio_buffer, WAVE_DATA_QSPI_ADDRESS + (i * RECORDING_WINDOW_LENGTH * FRAME_SHIFT * WAVE_DATA_WIDTH), RECORDING_WINDOW_SIZE);
 				// move old data to the left
-				arm_copy_q7(mfcc_out + (RECORDING_WINDOW_LENGTH * NUM_MFCC_COEFFS), mfcc_out, (NUM_FRAMES - RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS * sizeof(q7_t));
+				arm_copy_q7(mfcc_out + (RECORDING_WINDOW_LENGTH * NUM_MFCC_COEFFS), mfcc_out, (NUM_FRAMES - RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS);
 				mfcc_head = mfcc_out + ((NUM_FRAMES-RECORDING_WINDOW_LENGTH) * NUM_MFCC_COEFFS);
 				for (uint32_t j = 0; j < RECORDING_WINDOW_LENGTH; j ++) {
 					mfcc->mfcc_compute(audio_buffer + (j * FRAME_SHIFT), mfcc_head);
@@ -264,7 +265,9 @@ int main(void)
 		}
 
 		mfcc->~MFCC();
+		delete mfcc;
 		ds_cnn->~DS_CNN();
+		delete ds_cnn;
 		delete [] mfcc_out;
 		delete [] predictions;
 		delete [] average;
@@ -281,6 +284,7 @@ int main(void)
 		main_state = NN;
 //		main_state = SETUP;
 		audio_player->~AudioPlayer();
+		delete audio_player;
 
 		break;
 	}
