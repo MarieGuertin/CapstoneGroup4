@@ -23,11 +23,12 @@
 #define NUM_OUTPUT_CLASSES ((uint32_t) 12)
 #define NUM_PREDICTIONS ((uint32_t) (NUM_FRAMES / RECORDING_WINDOW_LENGTH))
 #define SILENCE_INDEX ((uint32_t) 0)
+#define UNKNOWN_INDEX ((uint32_t) 1)
 
 // TODO: tweak these parameters to find optimal combination
-#define RECORDING_WINDOW_LENGTH ((uint32_t)5)
-#define DETECTION_THRESHOLD ((uint32_t) 35)
-#define AVERAGE_WINDOW_LENGTH ((uint32_t) 3)
+#define RECORDING_WINDOW_LENGTH ((uint32_t)5) // number of frames to shift for each inference
+#define DETECTION_THRESHOLD ((uint32_t) 55) // value from 0 to 100
+#define AVERAGE_WINDOW_LENGTH ((uint32_t) 2)
 
 void compute_mfcc_coefficients(q7_t *mfcc_out, uint32_t audio_start_address, uint32_t num_frames, uint32_t frame_len, uint32_t frame_shift, uint32_t mfcc_num_features, uint32_t mfcc_num_dec_bits);
 void print_mfcc(q7_t *mfcc_out);
